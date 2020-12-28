@@ -1,6 +1,7 @@
 const Joi = require('joi');
 const ShopBaseSigner = require('../lib/Signer');
 const SignInvalidError = require('../errors/SignInvalid');
+const {TRANSACTION_TYPE_AUTHORIZATION} = require('../constants');
 
 const schemaRedirectRequest = Joi.object({
   x_account_id: Joi.number().required(),
@@ -86,4 +87,24 @@ async function parseOrderRequest(request) {
   };
 }
 
-module.exports = {parseOrderRequest};
+/**
+ *
+ * @param {orderResponse} res
+ * @return {*}
+ */
+function parseOrderResponse(res) {
+  return {
+    x_account_id: res.accountId,
+    x_amount: res.amount,
+    x_currency: res.currency,
+    x_gateway_reference: res.gatewayReference,
+    x_reference: res.reference,
+    x_transaction_type: TRANSACTION_TYPE_AUTHORIZATION,
+    x_test: res.isTest,
+    x_timestamp: res.timestamp,
+    x_message: res.errorMessage,
+    x_error_code: res.errorCode,
+  };
+}
+
+module.exports = {parseOrderRequest, parseOrderResponse};

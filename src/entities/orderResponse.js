@@ -3,6 +3,7 @@
 /**
  @typedef orderResponse
  @type {Object}
+ @property {number} accountId
  @property {number} amount
  @property {string} currency
  @property {boolean} isTest

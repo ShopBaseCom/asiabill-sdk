@@ -5,15 +5,6 @@
  */
 
 /**
- * Set config credential -> get from ShopBase
- *
- * @throws {Joi.ValidationError}
- * @function
- * @param {Object} credential
- * @name PaymentGateway#setCredential
- */
-
-/**
  *
  * @throws {Joi.ValidationError}
  * @public
@@ -44,6 +35,7 @@
  * Get accountId from body response gateway
  * @function
  * @param {orderRequest} orderRequest
+ * @param {AsiaBillCredential} credential
  * @name PaymentGateway#getDataCreateOrder
  * @returns {Promise<redirectRequest>}
  */
@@ -52,6 +44,7 @@
  * @function
  * @throws {Joi.ValidationError, SignInvalidError}
  * @param {Object} body
+ * @param {AsiaBillCredential} credential
  * @name PaymentGateway#getOrderResponse
  * @return {Promise<orderResponse>}
  */

@@ -1,4 +1,4 @@
-const RESULT_COMPLETED = 'authorization';
+const RESULT_COMPLETED = 'completed';
 const RESULT_FAILED = 'failed';
 
 module.exports = {

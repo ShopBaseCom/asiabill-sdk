@@ -13,7 +13,7 @@ class CredentialManager {
 
   /**
    * @public
-   * @param {number} id
+   * @param {string} id
    * @return {Promise<*>}
    */
   getById(id) {

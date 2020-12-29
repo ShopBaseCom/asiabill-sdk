@@ -2,5 +2,6 @@
  @typedef getTransactionRequest
  @type {Object}
  @property {string} reference
- @property {number} accountId
+ @property {string} accountId
+ @property {string} transactionType
  */

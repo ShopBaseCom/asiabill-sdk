@@ -9,7 +9,7 @@ const UrlManager = require('../lib/UrlManager');
 const logger = require('../lib/logger');
 const StatusCodes = require('../constants/statusCodes');
 const SignInvalidError = require('../errors/SignInvalid');
-const {parseOrderResponse} = require('../parser/redirect');
+const {parseOrderResponse} = require('../parser/response');
 const {redirectWithSignRequestToShopBase} = require('../lib/ResponseHelper');
 const {
   ERROR_PROCESSING_ERROR,

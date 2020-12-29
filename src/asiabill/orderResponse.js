@@ -26,5 +26,16 @@ const schemaGetTransactionResponse = Joi.object().keys({
   }),
 });
 
+const schemaCaptureOrVoidResponse = Joi.object().keys({
+  tradeinfo: Joi.object().keys({
+    merNo: Joi.string().allow(null, ''),
+    gatewayNo: Joi.string().allow(null, ''),
+    tradeNo: Joi.string().allow(null, ''),
+    orderNo: Joi.string().allow(null, ''),
+    orderStatus: Joi.string().allow(null, ''),
+    orderInfo: Joi.string().allow(null, ''),
+  }),
+});
 
-module.exports = {schemaOrderResponse, schemaGetTransactionResponse};
+
+module.exports = {schemaOrderResponse, schemaGetTransactionResponse, schemaCaptureOrVoidResponse};

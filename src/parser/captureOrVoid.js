@@ -3,7 +3,7 @@ const ShopBaseSigner = require('../lib/Signer');
 const SignInvalidError = require('../errors/SignInvalid');
 
 const schemaCaptureOrVoidPaymentRequest = Joi.object({
-  x_account_id: Joi.number().required(),
+  x_account_id: Joi.string().required(),
   x_amount: Joi.number().required(),
   x_currency: Joi.string().max(3).required(),
   x_reference: Joi.string().required(),
@@ -21,7 +21,9 @@ const schemaCaptureOrVoidPaymentRequest = Joi.object({
  * @return {Promise<captureOrVoidRequest>}
  */
 async function parseCaptureOrVoidRequest(request) {
-  const value = await schemaCaptureOrVoidPaymentRequest.validateAsync(request);
+  const value = await schemaCaptureOrVoidPaymentRequest.validateAsync(request, {
+    allowUnknown: true,
+  });
 
   if (!ShopBaseSigner.verify(request, value['x_signature'])) {
     throw new SignInvalidError('signature invalid');
@@ -32,8 +34,8 @@ async function parseCaptureOrVoidRequest(request) {
     currency: value['x_currency'],
     amount: value['x_amount'],
     reference: value['x_reference'],
-    gateway_reference: value['x_gateway_reference'],
-    transaction_type: value['x_transaction_type'],
+    gatewayReference: value['x_gateway_reference'],
+    transactionType: value['x_transaction_type'],
   };
 }
 

@@ -1,12 +1,13 @@
 const axios = require('axios');
-const qs = require('qs');
+const qs = require('querystring');
 const xml2js = require('xml2js');
-const {schemaOrderRequest, schemaGetTransactionRequest} = require('./orderRequest');
+const {schemaOrderRequest, schemaGetTransactionRequest, schemaCaptureOrVoidRequest} = require('./orderRequest');
 const schemaCredential = require('./credential');
 const sign = require('./signHelper');
-const {schemaOrderResponse, schemaGetTransactionResponse} = require('./orderResponse');
+const {schemaOrderResponse, schemaGetTransactionResponse, schemaCaptureOrVoidResponse} = require('./orderResponse');
 const logger = require('../lib/logger');
 const Joi = require('joi');
+const {TRANSACTION_TYPE_AUTHORIZATION, RESULT_COMPLETED, RESULT_FAILED} = require('../constants');
 const {TRANSACTION_STATUS} = require('./constant');
 const {
   ERROR_PROCESSING_ERROR, ERROR_CARD_DECLINED, MAP_ERROR,
@@ -79,7 +80,7 @@ class AsiaBillPaymentGateway {
       url: this.getUrlApi(credential),
     };
 
-    redirectRequest.data.signInfo = sign(credential, [
+    redirectRequest.data.signInfo = sign([
       credential.merNo,
       credential.gatewayNo,
       redirectRequest.data.orderNo,
@@ -97,7 +98,7 @@ class AsiaBillPaymentGateway {
    * @public
    * @throws {Joi.ValidationError} will throw when validate fail
    * @param {Object} body
-   * @return {number}
+   * @return {string}
    */
   getAccountIdFromResponseGateway(body) {
     if (!body || !body['remark']) {
@@ -166,7 +167,7 @@ class AsiaBillPaymentGateway {
       errorCode = result.errorCode;
       errorMessage = result.errorMessage;
     }
-    const signInfo = sign(credential, [
+    const signInfo = sign([
       orderResValid['orderNo'],
       orderResValid['orderAmount'],
       orderResValid['orderCurrency'],
@@ -199,6 +200,7 @@ class AsiaBillPaymentGateway {
       isTest: credential.isTestMode,
       timestamp: new Date().toISOString(),
       isCancel: false,
+      transactionType: TRANSACTION_TYPE_AUTHORIZATION,
     };
   }
 
@@ -240,17 +242,14 @@ class AsiaBillPaymentGateway {
   }
 
   /**
-   * transform, validate and sign request from ShopBase to gateway
+   * get AsiaBill transaction info
    * @public
    * @throws {Joi.ValidationError} will throw when validate fail
    * @param {getTransactionRequest} getTransactionRequest
    * @param {AsiaBillCredential} credential
    * @return {Promise<orderResponse>}
    */
-  async getTransactionHandler(
-      getTransactionRequest,
-      credential,
-  ) {
+  async getTransaction(getTransactionRequest, credential) {
     const getTransactionInfoReqValid = await schemaGetTransactionRequest.validateAsync(
         getTransactionRequest, {
           allowUnknown: true,
@@ -259,8 +258,8 @@ class AsiaBillPaymentGateway {
     const orderNo = getTransactionInfoReqValid.reference;
 
     const url = credential.isTestMode ?
-      `https://sandbox-pay.asiabill.com:8083/ACI/servlet/NormalCustomerCheck` :
-      `https://api.asiabill.com/servlet/NormalCustomerCheck`;
+      process.env.ASIABILL_RETRIEVE_URL_TEST_MODE :
+      process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE;
 
     const requestPayload = {
       merNo: credential.merNo,
@@ -269,7 +268,6 @@ class AsiaBillPaymentGateway {
     };
 
     requestPayload.signInfo = sign(
-        credential,
         [
           credential.merNo,
           credential.gatewayNo,
@@ -295,16 +293,97 @@ class AsiaBillPaymentGateway {
 
     const tradeInfo = getTransactionRes.tradeinfo;
 
+    const result = tradeInfo.orderStatus === TRANSACTION_STATUS.SUCCESS ? RESULT_COMPLETED : RESULT_FAILED;
     return {
+      timestamp: new Date().toISOString(),
+      accountId: getTransactionInfoReqValid.accountId,
       reference: this.getRefFromResponseGateway(tradeInfo),
       currency: tradeInfo.tradeCurrency,
+      isTest: credential.isTestMode,
       amount: tradeInfo.tradeAmount,
       gatewayReference: tradeInfo.tradeNo,
-      isPostPurchase: this.isPostPurchase(tradeInfo),
-      isSuccess: tradeInfo.queryResult === TRANSACTION_STATUS.SUCCESS,
-      isTest: credential.isTestMode,
+      result,
+      transactionType: getTransactionInfoReqValid.transactionType,
+    };
+  }
+
+  /**
+   * capture or void a payment
+   * @public
+   * @throws {Joi.ValidationError} will throw when validate fail
+   * @param {captureOrVoidRequest} captureOrVoidRequest
+   * @param {AsiaBillCredential} credential
+   * @return {Promise<orderManagementResponse>}
+   */
+  async captureOrVoid(captureOrVoidRequest, credential) {
+    const captureOrVoidReqValid = await schemaCaptureOrVoidRequest.validateAsync(
+        captureOrVoidRequest, {
+          allowUnknown: true,
+        },
+    );
+
+    const requestPayload = {
+      merNo: credential.merNo,
+      gatewayNo: credential.gatewayNo,
+      tradeNo: captureOrVoidReqValid.gatewayReference,
+      authType: captureOrVoidReqValid.transactionType,
+      remark: captureOrVoidReqValid.accountId,
+    };
+
+    requestPayload.signInfo = sign(
+        [
+          credential.merNo,
+          credential.gatewayNo,
+          requestPayload.tradeNo,
+          requestPayload.authType,
+          credential.signKey,
+        ],
+    );
+
+    const url = credential.isTestMode ?
+      process.env.ASIABILL_CAPTURE_VOID_URL_TEST_MODE :
+      process.env.ASIABILL_CAPTURE_VOID_URL_LIVE_MODE;
+
+    const response = await axios.post(
+        url,
+        qs.stringify(requestPayload),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        },
+    );
+    const jsonResponseData = await xmlParser.parseStringPromise(response.data);
+
+    const captureOrVoidRes = await schemaCaptureOrVoidResponse.validateAsync(
+        jsonResponseData.response,
+        {
+          allowUnknown: true,
+        },
+    );
+
+    const tradeInfo = captureOrVoidRes.tradeinfo;
+
+    let errorCode;
+    let errorMessage;
+
+    if (captureOrVoidRes.orderStatus === TRANSACTION_STATUS.FAILURE) {
+      const result = this.getErrorCodeAndMessage(
+          captureOrVoidRes.orderInfo,
+      );
+      errorCode = result.errorCode;
+      errorMessage = result.errorMessage;
+    }
+
+    const result = tradeInfo.orderStatus === TRANSACTION_STATUS.SUCCESS ? RESULT_COMPLETED : RESULT_FAILED;
+    return {
+      gatewayReference: tradeInfo.tradeNo,
+      reference: this.getRefFromResponseGateway(tradeInfo),
+      transactionType: captureOrVoidReqValid.transactionType,
+      result,
       timestamp: new Date().toISOString(),
-      isCancel: false,
+      errorCode,
+      errorMessage,
     };
   }
 

@@ -3,9 +3,12 @@ const ShopBaseSigner = require('../lib/Signer');
 const SignInvalidError = require('../errors/SignInvalid');
 
 const schemaGetTransactionRequest = Joi.object({
-  x_account_id: Joi.number().required(),
+  x_account_id: Joi.string().required(),
   x_reference: Joi.string().required(),
-  x_signature: Joi.string(),
+  x_gateway_reference: Joi.string().required(),
+  x_test: Joi.bool().required(),
+  x_transaction_type: Joi.string().required(),
+  x_signature: Joi.string().required(),
 });
 
 /**
@@ -25,6 +28,7 @@ async function parseGetTransactionRequest(request) {
   return {
     accountId: value['x_account_id'],
     reference: value['x_reference'],
+    transactionType: value['x_transaction_type'],
   };
 }
 

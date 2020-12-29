@@ -9,12 +9,10 @@ const crypto = require('crypto');
 /**
  * @public
  * @function
- * @param {AsiaBillCredential} credential
  * @param {signValues} signValues
  * @return {string}
  */
-function sign(credential, signValues = '') {
-  // eslint-disable-next-line max-len
+function sign(signValues = '') {
   return crypto.createHash('sha256').update(signValues.join('')).digest('hex');
 }
 

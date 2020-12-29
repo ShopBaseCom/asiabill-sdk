@@ -54,6 +54,6 @@
  * @throws {Joi.ValidationError}
  * @param {getTransactionRequest} getTransactionRequest
  * @param {AsiaBillCredential} credential
- * @name PaymentGateway#getTransactionHandler
+ * @name PaymentGateway#getTransaction
  * @return {Promise<orderResponse>}
  */

@@ -3,7 +3,7 @@
 /**
  @typedef orderResponse
  @type {Object}
- @property {number} accountId
+ @property {string} accountId
  @property {number} amount
  @property {string} currency
  @property {boolean} isTest
@@ -15,6 +15,8 @@
  @property {string} errorMessage
  @property {boolean} isSuccess
  @property {boolean} isCancel
+ @property {string} transactionType
+ @property {string} result
  */
 
 

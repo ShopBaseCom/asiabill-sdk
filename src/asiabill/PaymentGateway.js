@@ -21,26 +21,18 @@ const {
  */
 class AsiaBillPaymentGateway {
   /**
-   * @throws {Joi.ValidationError} will throw when validate fail
-   * @function
-   * @param {AsiaBillCredential} credential
-   */
-  setCredential(credential) {
-    const result = schemaCredential.validate(credential);
-    if (result.error) {
-      throw result.error;
-    }
-    this.credential = credential;
-  }
-
-  /**
    * transform, validate and sign request from ShopBase to gateway
    * @public
    * @throws {Joi.ValidationError} will throw when validate fail
    * @param {orderRequest} orderRequest
+   * @param {AsiaBillCredential} credential
    * @return {Promise<redirectRequest>}
    */
-  async getDataCreateOrder(orderRequest) {
+  async getDataCreateOrder(orderRequest, credential) {
+    const result = schemaCredential.validate(credential);
+    if (result.error) {
+      throw result.error;
+    }
     const orderReqValid = await schemaOrderRequest.validateAsync(
         orderRequest, {
           allowUnknown: true,
@@ -53,8 +45,8 @@ class AsiaBillPaymentGateway {
 
     const redirectRequest = {
       data: {
-        merNo: this.credential.merNo,
-        gatewayNo: this.credential.gatewayNo,
+        merNo: credential.merNo,
+        gatewayNo: credential.gatewayNo,
         orderNo: orderNo,
         orderCurrency: orderReqValid.currency,
         orderAmount: orderReqValid.amount,
@@ -81,10 +73,10 @@ class AsiaBillPaymentGateway {
         shipAddress: orderReqValid.shippingAddress.line1,
         shipZip: orderReqValid.shippingAddress.postal_code,
       },
-      url: this.urlApi,
+      url: this.getUrlApi(credential),
     };
 
-    redirectRequest.data.signInfo = sign(this.credential, redirectRequest.data);
+    redirectRequest.data.signInfo = sign(credential, redirectRequest.data);
 
     return redirectRequest;
   }
@@ -138,20 +130,33 @@ class AsiaBillPaymentGateway {
    * @public
    * @throws {Joi.ValidationError, SignInvalidError}
    * @param {Object} body
+   * @param {AsiaBillCredential} credential
    * @return {Promise<orderResponse>}
    */
-  async getOrderResponse(body) {
+  async getOrderResponse(body, credential) {
+    const result = schemaCredential.validate(credential);
+    if (result.error) {
+      throw result.error;
+    }
     const orderResValid = await schemaOrderResponse.validateAsync(
         body, {
           allowUnknown: true,
         },
     );
 
-    const {errorCode, errorMessage} = this.getErrorCodeAndMessage(
-        orderResValid['orderInfo'],
-    );
+    let errorCode;
+    let errorMessage;
 
-    const signInfo = sign(this.credential, {
+    if (orderResValid['orderStatus'] === TRANSACTION_STATUS.FAILURE) {
+      const result = this.getErrorCodeAndMessage(
+          orderResValid['orderInfo'],
+      );
+
+      errorCode = result.errorCode;
+      errorMessage = result.errorMessage;
+    }
+
+    const signInfo = sign(credential, {
       orderNo: orderResValid['orderNo'],
       // Todo check Signing mechanism
       returnUrl: '',
@@ -176,13 +181,14 @@ class AsiaBillPaymentGateway {
 
     return {
       errorCode, errorMessage,
+      accountId: this.getAccountIdFromResponseGateway(orderResValid),
       reference: this.getRefFromResponseGateway(orderResValid),
       currency: orderResValid['orderCurrency'],
       amount: orderResValid['orderAmount'],
       gatewayReference: orderResValid['tradeNo'],
       isPostPurchase: this.isPostPurchase(orderResValid),
       isSuccess: orderResValid['orderStatus'] === TRANSACTION_STATUS.SUCCESS,
-      isTest: this.credential.isTestMode,
+      isTest: credential.isTestMode,
       timestamp: new Date().toISOString(),
       isCancel: false,
     };
@@ -276,10 +282,11 @@ class AsiaBillPaymentGateway {
 
   /**
    * @private
+   * @param {AsiaBillCredential} credential
    * @return {string}
    */
-  get urlApi() {
-    if (this.credential.isTestMode) {
+  getUrlApi(credential) {
+    if (credential.isTestMode) {
       return process.env.ASIABILL_URL_TEST_MODE;
     }
 

@@ -9,6 +9,7 @@ const UrlManager = require('../lib/UrlManager');
 const logger = require('../lib/logger');
 const StatusCodes = require('../constants/statusCodes');
 const SignInvalidError = require('../errors/SignInvalid');
+const {parseOrderResponse} = require('../parser/redirect');
 const {redirectWithSignRequestToShopBase} = require('../lib/ResponseHelper');
 const {
   ERROR_PROCESSING_ERROR,
@@ -19,6 +20,7 @@ const {
 
 const creManager = new CredentialManager(redis);
 const urlManager = new UrlManager(redis);
+const paymentGateway = new PaymentGateway();
 
 /**
  * @param {Express.request} req
@@ -26,7 +28,6 @@ const urlManager = new UrlManager(redis);
  * @return {Promise<*>}
  */
 async function gatewayConfirmHandler(req, res) {
-  const paymentGateway = new PaymentGateway();
   let ref;
   let isPostPurchase;
   let urlObject;
@@ -37,8 +38,8 @@ async function gatewayConfirmHandler(req, res) {
     urlObject = await urlManager.getUrlObject(ref, isPostPurchase);
     const accountId = paymentGateway.getAccountIdFromResponseGateway(req.body);
     const credential = await creManager.getById(accountId);
-    paymentGateway.setCredential(credential);
-    const orderResponse = await paymentGateway.getOrderResponse(req.body);
+    const orderResponse = await paymentGateway.getOrderResponse(req.body,
+        credential);
 
     if (orderResponse.isCancel) {
       return res.redirect(urlObject.cancelUrl);
@@ -47,7 +48,7 @@ async function gatewayConfirmHandler(req, res) {
     return redirectWithSignRequestToShopBase(
         res,
         urlObject.returnUrl,
-        orderResponse,
+        parseOrderResponse(orderResponse),
     );
   } catch (e) {
     if (!urlObject) {

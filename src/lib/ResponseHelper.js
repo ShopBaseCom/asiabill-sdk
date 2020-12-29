@@ -1,4 +1,5 @@
 const querystring = require('querystring');
+const ShopBaseSigner = require('./Signer');
 
 /**
  * @param {Express.response} res
@@ -7,7 +8,9 @@ const querystring = require('querystring');
  * @return {*}
  */
 function redirectWithSignRequestToShopBase(res, url, body) {
-  return res.redirect(`${url}?${querystring.stringify(body)}`);
+  return res.redirect(`${url}?${querystring.stringify(
+      ShopBaseSigner.sign(body),
+  )}`);
 }
 
 module.exports = {redirectWithSignRequestToShopBase};

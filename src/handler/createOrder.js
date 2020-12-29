@@ -32,8 +32,8 @@ async function createOrderHandler(req, res) {
         orderReq.reference, !!orderReq.isPostPurchase, orderReq.urlObject,
     );
     const paymentGateway = new PaymentGateway();
-    paymentGateway.setCredential(credential);
-    const createOrder = await paymentGateway.getDataCreateOrder(orderReq);
+    const createOrder = await paymentGateway.getDataCreateOrder(orderReq,
+        credential);
     redis.set('test', JSON.stringify(createOrder));
     return res.render('redirect', createOrder);
   } catch (e) {

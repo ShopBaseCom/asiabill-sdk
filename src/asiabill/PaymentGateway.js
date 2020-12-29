@@ -1,9 +1,10 @@
 const axios = require('axios');
 const qs = require('qs');
+const xml2js = require('xml2js');
 const {schemaOrderRequest, schemaGetTransactionRequest} = require('./orderRequest');
 const schemaCredential = require('./credential');
 const sign = require('./signHelper');
-const schemaOrderResponse = require('./orderResponse');
+const {schemaOrderResponse, schemaGetTransactionResponse} = require('./orderResponse');
 const logger = require('../lib/logger');
 const Joi = require('joi');
 const {TRANSACTION_STATUS} = require('./constant');
@@ -12,6 +13,8 @@ const {
   PAYMENT_METHOD,
   INTERFACE_INFO,
 } = require('./constant');
+
+const xmlParser = new xml2js.Parser({explicitArray: false});
 
 /**
  * Class representing a AsianBill gateway.
@@ -76,7 +79,15 @@ class AsiaBillPaymentGateway {
       url: this.getUrlApi(credential),
     };
 
-    redirectRequest.data.signInfo = sign(credential, redirectRequest.data);
+    redirectRequest.data.signInfo = sign(credential, [
+      credential.merNo,
+      credential.gatewayNo,
+      redirectRequest.data.orderNo,
+      redirectRequest.data.orderCurrency,
+      redirectRequest.data.orderAmount,
+      redirectRequest.data.returnUrl,
+      credential.signKey,
+    ]);
 
     return redirectRequest;
   }
@@ -155,14 +166,11 @@ class AsiaBillPaymentGateway {
       errorCode = result.errorCode;
       errorMessage = result.errorMessage;
     }
-
-    const signInfo = sign(credential, {
-      orderNo: orderResValid['orderNo'],
-      // Todo check Signing mechanism
-      returnUrl: '',
-      orderAmount: orderResValid['orderAmount'],
-      orderCurrency: orderResValid['orderCurrency'],
-    });
+    const signInfo = sign(credential, [
+      orderResValid['orderNo'],
+      orderResValid['orderAmount'],
+      orderResValid['orderCurrency'],
+    ]);
 
     // Todo check Signing mechanism
     if (signInfo !== orderResValid['signInfo']) {
@@ -236,9 +244,13 @@ class AsiaBillPaymentGateway {
    * @public
    * @throws {Joi.ValidationError} will throw when validate fail
    * @param {getTransactionRequest} getTransactionRequest
+   * @param {AsiaBillCredential} credential
    * @return {Promise<orderResponse>}
    */
-  async getTransactionHandler(getTransactionRequest) {
+  async getTransactionHandler(
+      getTransactionRequest,
+      credential,
+  ) {
     const getTransactionInfoReqValid = await schemaGetTransactionRequest.validateAsync(
         getTransactionRequest, {
           allowUnknown: true,
@@ -246,22 +258,25 @@ class AsiaBillPaymentGateway {
     );
     const orderNo = getTransactionInfoReqValid.reference;
 
-    const url = this.credential.isTestMode ?
+    const url = credential.isTestMode ?
       `https://sandbox-pay.asiabill.com:8083/ACI/servlet/NormalCustomerCheck` :
       `https://api.asiabill.com/servlet/NormalCustomerCheck`;
 
     const requestPayload = {
-      merNo: this.credential.merNo,
-      gatewayNo: this.credential.gatewayNo,
+      merNo: credential.merNo,
+      gatewayNo: credential.gatewayNo,
       orderNo: orderNo,
     };
 
     requestPayload.signInfo = sign(
-        this.credential,
-        requestPayload,
+        credential,
+        [
+          credential.merNo,
+          credential.gatewayNo,
+          credential.signKey,
+        ],
     );
-
-    return await axios.post(
+    const response = await axios.post(
         url,
         qs.stringify(requestPayload),
         {
@@ -270,6 +285,27 @@ class AsiaBillPaymentGateway {
           },
         },
     );
+    const jsonResponseData = await xmlParser.parseStringPromise(response.data);
+    const getTransactionRes = await schemaGetTransactionResponse.validateAsync(
+        jsonResponseData.response,
+        {
+          allowUnknown: true,
+        },
+    );
+
+    const tradeInfo = getTransactionRes.tradeinfo;
+
+    return {
+      reference: this.getRefFromResponseGateway(tradeInfo),
+      currency: tradeInfo.tradeCurrency,
+      amount: tradeInfo.tradeAmount,
+      gatewayReference: tradeInfo.tradeNo,
+      isPostPurchase: this.isPostPurchase(tradeInfo),
+      isSuccess: tradeInfo.queryResult === TRANSACTION_STATUS.SUCCESS,
+      isTest: credential.isTestMode,
+      timestamp: new Date().toISOString(),
+      isCancel: false,
+    };
   }
 
   /**

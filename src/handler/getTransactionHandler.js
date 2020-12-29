@@ -13,6 +13,7 @@ const CredentialManager = require('../lib/CredentialManager');
 const SignInvalidError = require('../errors/SignInvalid');
 const logger = require('../lib/logger');
 const {ERROR_INVALID_SIGNATURE} = require('../constants');
+const ShopBaseSigner = require('../lib/Signer');
 
 const creManager = new CredentialManager(redis);
 /**
@@ -25,12 +26,12 @@ async function getTransactionHandler(req, res) {
     const getTransactionReq = await parseGetTransactionRequest(req.query);
     const credential = await creManager.getById(getTransactionReq.accountId);
     const paymentGateway = new PaymentGateway();
-    paymentGateway.setCredential(credential);
 
-    const response = await paymentGateway.getTransactionHandler(getTransactionReq);
-    return res.status(200).json(response);
+    const response = await paymentGateway.getTransactionHandler(getTransactionReq, credential);
+
+    return res.status(StatusCodes.OK).json(ShopBaseSigner.sign(response));
   } catch (e) {
-    if (e instanceof Joi.ValidationError) {
+      if (e instanceof Joi.ValidationError) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         x_result: RESULT_FAILED,
         x_message: e.message,

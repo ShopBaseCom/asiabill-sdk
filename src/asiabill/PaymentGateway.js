@@ -1,4 +1,6 @@
-const schemaOrderRequest = require('./orderRequest');
+const axios = require('axios');
+const qs = require('qs');
+const {schemaOrderRequest, schemaGetTransactionRequest} = require('./orderRequest');
 const schemaCredential = require('./credential');
 const sign = require('./signHelper');
 const schemaOrderResponse = require('./orderResponse');
@@ -221,6 +223,47 @@ class AsiaBillPaymentGateway {
       errorMessage: message,
       errorCode: errorCode,
     };
+  }
+
+  /**
+   * transform, validate and sign request from ShopBase to gateway
+   * @public
+   * @throws {Joi.ValidationError} will throw when validate fail
+   * @param {getTransactionRequest} getTransactionRequest
+   * @return {Promise<orderResponse>}
+   */
+  async getTransactionHandler(getTransactionRequest) {
+    const getTransactionInfoReqValid = await schemaGetTransactionRequest.validateAsync(
+        getTransactionRequest, {
+          allowUnknown: true,
+        },
+    );
+    const orderNo = getTransactionInfoReqValid.reference;
+
+    const url = this.credential.isTestMode ?
+      `https://sandbox-pay.asiabill.com:8083/ACI/servlet/NormalCustomerCheck` :
+      `https://api.asiabill.com/servlet/NormalCustomerCheck`;
+
+    const requestPayload = {
+      merNo: this.credential.merNo,
+      gatewayNo: this.credential.gatewayNo,
+      orderNo: orderNo,
+    };
+
+    requestPayload.signInfo = sign(
+        this.credential,
+        requestPayload,
+    );
+
+    return await axios.post(
+        url,
+        qs.stringify(requestPayload),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        },
+    );
   }
 
   /**

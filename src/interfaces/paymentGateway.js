@@ -55,3 +55,11 @@
  * @name PaymentGateway#getOrderResponse
  * @return {Promise<orderResponse>}
  */
+
+/**
+ * @function
+ * @throws {Joi.ValidationError}
+ * @param {getTransactionRequest} getTransactionRequest
+ * @name PaymentGateway#getTransactionHandler
+ * @return {Promise<orderResponse>}
+ */

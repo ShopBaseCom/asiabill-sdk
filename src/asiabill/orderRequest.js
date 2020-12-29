@@ -20,4 +20,10 @@ const schemaOrderRequest = Joi.object().keys({
   billingAddress: schemaAddress.required(),
 });
 
-module.exports = schemaOrderRequest;
+
+const schemaGetTransactionRequest = Joi.object().keys({
+  reference: Joi.string().max(50).required(),
+});
+
+
+module.exports = {schemaOrderRequest, schemaGetTransactionRequest};

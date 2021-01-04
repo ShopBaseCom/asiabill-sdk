@@ -10,7 +10,7 @@
  * @public
  * @param {Object} body
  * @name PaymentGateway#getAccountIdFromResponseGateway
- * @return {number}
+ * @return {string}
  */
 
 /**
@@ -46,5 +46,14 @@
  * @param {Object} body
  * @param {AsiaBillCredential} credential
  * @name PaymentGateway#getOrderResponse
+ * @return {Promise<orderResponse>}
+ */
+
+/**
+ * @function
+ * @throws {Joi.ValidationError}
+ * @param {getTransactionRequest} getTransactionRequest
+ * @param {AsiaBillCredential} credential
+ * @name PaymentGateway#getTransaction
  * @return {Promise<orderResponse>}
  */

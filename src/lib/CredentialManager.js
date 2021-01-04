@@ -77,4 +77,5 @@ class CredentialManager {
   }
 }
 
+
 module.exports = CredentialManager;

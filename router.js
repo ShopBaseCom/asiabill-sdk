@@ -2,6 +2,9 @@ const express = require('express');
 const createOrderHandler = require('./src/handler/createOrder');
 const gatewayWebhookHandler = require('./src/handler/gatewayWebhookHandler');
 const gatewayConfirmHandler = require('./src/handler/gatewayConfirmHandler');
+const getTransactionInfoHandler = require('./src/handler/getTransactionHandler');
+const captureOrVoidHandler = require('./src/handler/captureOrVoidHandler');
+
 const router = new express.Router();
 
 const redis = require('./src/lib/redis');
@@ -16,5 +19,9 @@ router.get('/test', async (req, res) => {
   console.log(redirectOrder);
   return res.render('redirect', JSON.parse(redirectOrder));
 });
+
+router.get('/transaction', getTransactionInfoHandler);
+
+router.post('/capture_or_void', captureOrVoidHandler);
 
 module.exports = router;

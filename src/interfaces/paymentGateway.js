@@ -10,7 +10,7 @@
  * @public
  * @param {Object} body
  * @name PaymentGateway#getAccountIdFromResponseGateway
- * @return {number}
+ * @return {string}
  */
 
 /**

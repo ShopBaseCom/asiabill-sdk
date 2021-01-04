@@ -1,6 +1,3 @@
-const axios = require('axios');
-const qs = require('querystring');
-const xml2js = require('xml2js');
 const {schemaOrderRequest, schemaGetTransactionRequest, schemaCaptureOrVoidRequest} = require('./orderRequest');
 const schemaCredential = require('./credential');
 const sign = require('./signHelper');
@@ -14,8 +11,7 @@ const {
   PAYMENT_METHOD,
   INTERFACE_INFO,
 } = require('./constant');
-
-const xmlParser = new xml2js.Parser({explicitArray: false});
+const Axios = require('../lib/Axios');
 
 /**
  * Class representing a AsianBill gateway.
@@ -274,18 +270,9 @@ class AsiaBillPaymentGateway {
           credential.signKey,
         ],
     );
-    const response = await axios.post(
-        url,
-        qs.stringify(requestPayload),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        },
-    );
-    const jsonResponseData = await xmlParser.parseStringPromise(response.data);
+    const response = await Axios.getInstance().post(url, requestPayload);
     const getTransactionRes = await schemaGetTransactionResponse.validateAsync(
-        jsonResponseData.response,
+        response.response,
         {
           allowUnknown: true,
         },
@@ -344,19 +331,9 @@ class AsiaBillPaymentGateway {
       process.env.ASIABILL_CAPTURE_VOID_URL_TEST_MODE :
       process.env.ASIABILL_CAPTURE_VOID_URL_LIVE_MODE;
 
-    const response = await axios.post(
-        url,
-        qs.stringify(requestPayload),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        },
-    );
-    const jsonResponseData = await xmlParser.parseStringPromise(response.data);
-
+    const response = await Axios.getInstance().post(url, requestPayload);
     const captureOrVoidRes = await schemaCaptureOrVoidResponse.validateAsync(
-        jsonResponseData.response,
+        response.response,
         {
           allowUnknown: true,
         },

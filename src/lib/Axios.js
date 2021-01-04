@@ -30,10 +30,13 @@ const Axios = {
     // response interceptor
     instance.interceptors.response.use(function(response) {
       // Any status code that lie within the range of 2xx cause this function to trigger
-      if (response.headers['content-type'] && response.headers['content-type'].contains('text/xml')) {
-        return xmlParser.parseStringPromise(response.data).then((result) => result).catch((err) => Promise.reject(err));
+      if (response.headers['content-type'] && response.headers['content-type'].includes('text/xml')) {
+        return xmlParser.parseStringPromise(response.data).then((result) => {
+          response.data = result;
+          return response;
+        }).catch((err) => Promise.reject(err));
       } else {
-        return response.data;
+        return response;
       }
     }, function(error) {
       // Any status codes that falls outside the range of 2xx cause this function to trigger

@@ -272,7 +272,7 @@ class AsiaBillPaymentGateway {
     );
     const response = await Axios.getInstance().post(url, requestPayload);
     const getTransactionRes = await schemaGetTransactionResponse.validateAsync(
-        response.response,
+        response.data.response,
         {
           allowUnknown: true,
         },
@@ -333,7 +333,7 @@ class AsiaBillPaymentGateway {
 
     const response = await Axios.getInstance().post(url, requestPayload);
     const captureOrVoidRes = await schemaCaptureOrVoidResponse.validateAsync(
-        response.response,
+        response.data.response,
         {
           allowUnknown: true,
         },

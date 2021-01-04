@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+
 /**
  * Signing mechanism data transform between ShopBase and provider
  */
@@ -22,6 +23,9 @@ class ShopBaseSigner {
           return 0;
         }).
         reduce(((previousValue, [key, val]) => {
+          if (typeof val === 'object') {
+            return `${previousValue}${key}${JSON.stringify(val)}`;
+          }
           return `${previousValue}${key}${val}`;
         }), '');
 
@@ -46,8 +50,8 @@ class ShopBaseSigner {
    * @param {string} signature
    * @return {boolean}
    */
-  static verify(object, signature) {
-    return true;
+  static verify(object, signature = object['x_signature']) {
+    return this.sign(object).x_signature === signature;
   }
 }
 

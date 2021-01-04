@@ -14,6 +14,8 @@ const CredentialManager = require('../lib/CredentialManager');
 const UrlManager = require('../lib/UrlManager');
 const SignInvalidError = require('../errors/SignInvalid');
 const logger = require('../lib/logger');
+const InvalidAccountError = require('../errors/InvalidAccountError');
+const ShopBaseSystemError = require('../errors/ShopBaseSystemError');
 const {ERROR_INVALID_SIGNATURE} = require('../constants');
 
 const creManager = new CredentialManager(redis);
@@ -50,6 +52,22 @@ async function createOrderHandler(req, res) {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_INVALID_SIGNATURE,
+      });
+    }
+
+    if (e instanceof InvalidAccountError) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        x_result: RESULT_FAILED,
+        x_message: e.message,
+        x_error_code: ERROR_MISSING_PARAMS,
+      });
+    }
+
+    if (e instanceof ShopBaseSystemError) {
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        x_result: RESULT_FAILED,
+        x_message: e.message,
+        x_error_code: ERROR_PROCESSING_ERROR,
       });
     }
 

@@ -9,6 +9,8 @@ const UrlManager = require('../lib/UrlManager');
 const logger = require('../lib/logger');
 const StatusCodes = require('../constants/statusCodes');
 const SignInvalidError = require('../errors/SignInvalid');
+const InvalidAccountError = require('../errors/InvalidAccountError');
+const ShopBaseSystemError = require('../errors/ShopBaseSystemError');
 const {parseOrderResponse} = require('../parser/redirect');
 const {redirectWithSignRequestToShopBase} = require('../lib/ResponseHelper');
 const {
@@ -70,6 +72,22 @@ async function gatewayConfirmHandler(req, res) {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_INVALID_SIGNATURE,
+      });
+    }
+
+    if (e instanceof InvalidAccountError) {
+      return redirectWithSignRequestToShopBase(res, urlObject.returnUrl, {
+        x_result: RESULT_FAILED,
+        x_message: e.message,
+        x_error_code: ERROR_MISSING_PARAMS,
+      });
+    }
+
+    if (e instanceof ShopBaseSystemError) {
+      return redirectWithSignRequestToShopBase(res, urlObject.returnUrl, {
+        x_result: RESULT_FAILED,
+        x_message: e.message,
+        x_error_code: ERROR_PROCESSING_ERROR,
       });
     }
 

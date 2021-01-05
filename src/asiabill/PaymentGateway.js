@@ -12,7 +12,6 @@ const {
   INTERFACE_INFO,
 } = require('./constant');
 const Axios = require('../lib/Axios');
-const {TRANSACTION_TYPE_CAPTURE} = require('../constants');
 
 /**
  * Class representing a AsianBill gateway.
@@ -302,8 +301,39 @@ class AsiaBillPaymentGateway {
   }
 
   /**
-   * capture or void a payment
+   * capture a payment
    * @public
+   * @throws {Joi.ValidationError} will throw when validate fail
+   * @param {captureRequest} captureRequest
+   * @param {AsiaBillCredential} credential
+   * @return {Promise<orderManagementResponse>}
+   */
+  async capture(captureRequest, credential) {
+    return this.captureOrVoid({
+      ...captureRequest,
+      authType: TRANSACTION_TYPES.CAPTURE,
+    }, credential);
+  }
+
+  /**
+   * void a payment
+   * @public
+   * @throws {Joi.ValidationError} will throw when validate fail
+   * @param {voidRequest} voidRequest
+   * @param {AsiaBillCredential} credential
+   * @return {Promise<orderManagementResponse>}
+   */
+  async void(voidRequest, credential) {
+    return this.captureOrVoid({
+      ...captureRequest,
+      authType: TRANSACTION_TYPES.VOID,
+    }, credential);
+  }
+
+
+  /**
+   * capture or void a payment
+   * @private
    * @throws {Joi.ValidationError} will throw when validate fail
    * @param {captureOrVoidRequest} captureOrVoidRequest
    * @param {AsiaBillCredential} credential
@@ -320,8 +350,7 @@ class AsiaBillPaymentGateway {
       merNo: credential.merNo,
       gatewayNo: credential.gatewayNo,
       tradeNo: captureOrVoidReqValid.gatewayReference,
-      authType: captureOrVoidReqValid.transactionType === TRANSACTION_TYPE_CAPTURE ?
-        TRANSACTION_TYPES.CAPTURE : TRANSACTION_TYPES.VOID,
+      authType: captureOrVoidReqValid.authType,
       remark: captureOrVoidReqValid.accountId,
     };
 

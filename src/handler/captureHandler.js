@@ -1,10 +1,9 @@
 const {
   StatusCodes,
-  TRANSACTION_TYPE_CAPTURE,
 } = require('../constants');
 
 const PaymentGateway = require('../asiabill/PaymentGateway');
-const {parseCaptureOrVoidRequest} = require('../parser/captureOrVoid');
+const {parseCaptureRequest} = require('../parser/capture');
 const redis = require('../lib/redis');
 const CredentialManager = require('../lib/CredentialManager');
 const ShopBaseSigner = require('../lib/Signer');
@@ -19,12 +18,11 @@ const creManager = new CredentialManager(redis);
  */
 async function captureHandler(req, res) {
   try {
-    const captureOrVoidReq = await parseCaptureOrVoidRequest(req.body);
-    const credential = await creManager.getById(captureOrVoidReq.accountId);
+    const captureReq = await parseCaptureRequest(req.body);
+    const credential = await creManager.getById(captureReq.accountId);
     const paymentGateway = new PaymentGateway();
 
-    captureOrVoidReq.transactionType = TRANSACTION_TYPE_CAPTURE;
-    const response = await paymentGateway.captureOrVoid(captureOrVoidReq, credential);
+    const response = await paymentGateway.capture(captureReq, credential);
 
     return res.status(StatusCodes.OK).json(ShopBaseSigner.sign(parseOrderManagementResponse(response)));
   } catch (e) {

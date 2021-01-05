@@ -1,10 +1,9 @@
 const {
   StatusCodes,
-  TRANSACTION_TYPE_VOID,
 } = require('../constants');
 
 const PaymentGateway = require('../asiabill/PaymentGateway');
-const {parseCaptureOrVoidRequest} = require('../parser/captureOrVoid');
+const {parseVoidRequest} = require('../parser/void');
 const redis = require('../lib/redis');
 const CredentialManager = require('../lib/CredentialManager');
 const ShopBaseSigner = require('../lib/Signer');
@@ -20,12 +19,11 @@ const creManager = new CredentialManager(redis);
  */
 async function voidHandler(req, res) {
   try {
-    const captureOrVoidReq = await parseCaptureOrVoidRequest(req.body);
-    const credential = await creManager.getById(captureOrVoidReq.accountId);
+    const voidReq = await parseVoidRequest(req.body);
+    const credential = await creManager.getById(voidReq.accountId);
     const paymentGateway = new PaymentGateway();
 
-    captureOrVoidReq.transactionType = TRANSACTION_TYPE_VOID;
-    const response = await paymentGateway.captureOrVoid(captureOrVoidReq, credential);
+    const response = await paymentGateway.void(voidReq, credential);
 
     return res.status(StatusCodes.OK).json(ShopBaseSigner.sign(parseOrderManagementResponse(response)));
   } catch (e) {

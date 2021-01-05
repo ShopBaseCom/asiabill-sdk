@@ -1,3 +1,13 @@
+/**
+ @typedef captureOrVoidRequest
+ @type {Object}
+ @property {string} accountId
+ @property {string} reference
+ @property {string} gatewayReference
+ @property {number} authType
+ */
+
+
 const Joi = require('joi');
 
 const schemaAddress = Joi.object({

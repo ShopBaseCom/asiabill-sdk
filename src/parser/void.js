@@ -2,7 +2,7 @@ const Joi = require('joi');
 const ShopBaseSigner = require('../lib/Signer');
 const SignInvalidError = require('../errors/SignInvalid');
 
-const schemaCaptureOrVoidPaymentRequest = Joi.object({
+const schemaVoidPaymentRequest = Joi.object({
   x_account_id: Joi.string().required(),
   x_reference: Joi.string().required(),
   x_gateway_reference: Joi.string().required(),
@@ -12,10 +12,10 @@ const schemaCaptureOrVoidPaymentRequest = Joi.object({
 /**
  * @throws {Joi.ValidationError} will throw when validate fail
  * @param {Object} request Object get from request body sent from ShopBase
- * @return {Promise<captureOrVoidRequest>}
+ * @return {Promise<captureRequest>}
  */
-async function parseCaptureOrVoidRequest(request) {
-  const value = await schemaCaptureOrVoidPaymentRequest.validateAsync(request, {
+async function parseVoidRequest(request) {
+  const value = await schemaVoidPaymentRequest.validateAsync(request, {
     allowUnknown: true,
   });
 
@@ -30,4 +30,4 @@ async function parseCaptureOrVoidRequest(request) {
   };
 }
 
-module.exports = {parseCaptureOrVoidRequest};
+module.exports = {parseVoidRequest};

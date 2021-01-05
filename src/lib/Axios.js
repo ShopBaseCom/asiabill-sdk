@@ -1,6 +1,7 @@
 const axios = require( 'axios');
 const qs = require('querystring');
 const xml2js = require('xml2js');
+const HttpsProxyAgent = require('https-proxy-agent');
 
 const xmlParser = new xml2js.Parser({explicitArray: false});
 
@@ -16,6 +17,13 @@ const Axios = {
         return qs.stringify(data);
       }],
     };
+    if (process.env.ENABLE_PROXY === 'true') {
+      config.httpsAgent = new HttpsProxyAgent({
+        host: process.env.PROXY_HOST,
+        port: process.env.PROXY_PORT,
+        auth: `${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}`,
+      });
+    }
     const instance = axios.create(config);
 
     // request interceptor
@@ -30,14 +38,12 @@ const Axios = {
     // response interceptor
     instance.interceptors.response.use(function(response) {
       // Any status code that lie within the range of 2xx cause this function to trigger
-      if (response.headers['content-type'] && response.headers['content-type'].includes('text/xml')) {
-        return xmlParser.parseStringPromise(response.data).then((result) => {
-          response.data = result;
-          return response;
-        }).catch((err) => Promise.reject(err));
-      } else {
+      return xmlParser.parseStringPromise(response.data).then((result) => {
+        response.data = result;
         return response;
-      }
+      }).catch((_) => {
+        return response;
+      });
     }, function(error) {
       // Any status codes that falls outside the range of 2xx cause this function to trigger
       return Promise.reject(error);

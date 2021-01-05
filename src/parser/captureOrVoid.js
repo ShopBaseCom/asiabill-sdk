@@ -4,15 +4,10 @@ const SignInvalidError = require('../errors/SignInvalid');
 
 const schemaCaptureOrVoidPaymentRequest = Joi.object({
   x_account_id: Joi.string().required(),
-  x_amount: Joi.number().required(),
-  x_currency: Joi.string().max(3).required(),
   x_reference: Joi.string().required(),
   x_gateway_reference: Joi.string().required(),
-  x_test: Joi.bool().required(),
-  x_url_callback: Joi.string().required(),
   x_transaction_type: Joi.string().required(),
-  x_invoice: Joi.string(),
-  x_signature: Joi.string(),
+  x_signature: Joi.string().required(),
 });
 
 /**
@@ -31,8 +26,6 @@ async function parseCaptureOrVoidRequest(request) {
 
   return {
     accountId: value['x_account_id'],
-    currency: value['x_currency'],
-    amount: value['x_amount'],
     reference: value['x_reference'],
     gatewayReference: value['x_gateway_reference'],
     transactionType: value['x_transaction_type'],

@@ -45,6 +45,19 @@ class ShopBaseSigner {
   }
 
   /**
+   * Write signature to response header
+   * @param {Express.response} res
+   * @param {Object} data
+   * @return {Express.response}
+   */
+  static signResponse(res, data) {
+    delete data['x_signature'];
+    const sign = this.getSignature(data);
+    res.header('X-Signature', sign);
+    return res.json(data);
+  }
+
+  /**
    *
    * @param {Object} object
    * @param {string} signature

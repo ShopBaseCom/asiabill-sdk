@@ -4,7 +4,14 @@ const sign = require('./signHelper');
 const {schemaOrderResponse, schemaGetTransactionResponse, schemaCaptureOrVoidResponse} = require('./orderResponse');
 const logger = require('../lib/logger');
 const Joi = require('joi');
-const {TRANSACTION_TYPE_AUTHORIZATION, RESULT_COMPLETED, RESULT_FAILED} = require('../constants');
+const {
+  TRANSACTION_TYPE_AUTHORIZATION,
+  RESULT_COMPLETED,
+  RESULT_FAILED,
+  RESULT_INVALID,
+  RESULT_VALID,
+  RESULT_RESTRICTED,
+} = require('../constants');
 const {TRANSACTION_STATUS} = require('./constant');
 const {
   ERROR_PROCESSING_ERROR, ERROR_CARD_DECLINED, MAP_ERROR,
@@ -34,9 +41,9 @@ class AsiaBillPaymentGateway {
       throw result.error;
     }
     const orderReqValid = await schemaOrderRequest.validateAsync(
-        orderRequest, {
-          allowUnknown: true,
-        },
+      orderRequest, {
+        allowUnknown: true,
+      },
     );
     let orderNo = orderRequest.reference;
     if (orderRequest.isPostPurchase) {
@@ -147,9 +154,9 @@ class AsiaBillPaymentGateway {
       throw result.error;
     }
     const orderResValid = await schemaOrderResponse.validateAsync(
-        body, {
-          allowUnknown: true,
-        },
+      body, {
+        allowUnknown: true,
+      },
     );
 
     let errorCode;
@@ -157,7 +164,7 @@ class AsiaBillPaymentGateway {
 
     if (orderResValid['orderStatus'] === TRANSACTION_STATUS.FAILURE) {
       const result = this.getErrorCodeAndMessage(
-          orderResValid['orderInfo'],
+        orderResValid['orderInfo'],
       );
 
       errorCode = result.errorCode;
@@ -247,9 +254,9 @@ class AsiaBillPaymentGateway {
    */
   async getTransaction(getTransactionRequest, credential) {
     const getTransactionInfoReqValid = await schemaGetTransactionRequest.validateAsync(
-        getTransactionRequest, {
-          allowUnknown: true,
-        },
+      getTransactionRequest, {
+        allowUnknown: true,
+      },
     );
     const orderNo = getTransactionInfoReqValid.reference;
 
@@ -264,18 +271,18 @@ class AsiaBillPaymentGateway {
     };
 
     requestPayload.signInfo = sign(
-        [
-          credential.merNo,
-          credential.gatewayNo,
-          credential.signKey,
-        ],
+      [
+        credential.merNo,
+        credential.gatewayNo,
+        credential.signKey,
+      ],
     );
     const response = await Axios.getInstance().post(url, requestPayload);
     const getTransactionRes = await schemaGetTransactionResponse.validateAsync(
-        response.data.response,
-        {
-          allowUnknown: true,
-        },
+      response.data.response,
+      {
+        allowUnknown: true,
+      },
     );
 
     const tradeInfo = getTransactionRes.tradeinfo;
@@ -304,9 +311,9 @@ class AsiaBillPaymentGateway {
    */
   async captureOrVoid(captureOrVoidRequest, credential) {
     const captureOrVoidReqValid = await schemaCaptureOrVoidRequest.validateAsync(
-        captureOrVoidRequest, {
-          allowUnknown: true,
-        },
+      captureOrVoidRequest, {
+        allowUnknown: true,
+      },
     );
 
     const requestPayload = {
@@ -318,13 +325,13 @@ class AsiaBillPaymentGateway {
     };
 
     requestPayload.signInfo = sign(
-        [
-          credential.merNo,
-          credential.gatewayNo,
-          requestPayload.tradeNo,
-          requestPayload.authType,
-          credential.signKey,
-        ],
+      [
+        credential.merNo,
+        credential.gatewayNo,
+        requestPayload.tradeNo,
+        requestPayload.authType,
+        credential.signKey,
+      ],
     );
 
     const url = credential.isTestMode ?
@@ -333,10 +340,10 @@ class AsiaBillPaymentGateway {
 
     const response = await Axios.getInstance().post(url, requestPayload);
     const captureOrVoidRes = await schemaCaptureOrVoidResponse.validateAsync(
-        response.data,
-        {
-          allowUnknown: true,
-        },
+      response.data,
+      {
+        allowUnknown: true,
+      },
     );
 
 
@@ -345,7 +352,7 @@ class AsiaBillPaymentGateway {
 
     if (captureOrVoidRes.orderStatus === TRANSACTION_STATUS.FAILURE) {
       const result = this.getErrorCodeAndMessage(
-          captureOrVoidRes.orderInfo,
+        captureOrVoidRes.orderInfo,
       );
       errorCode = result.errorCode;
       errorMessage = result.errorMessage;
@@ -360,6 +367,71 @@ class AsiaBillPaymentGateway {
       timestamp: new Date().toISOString(),
       errorCode,
       errorMessage,
+    };
+  }
+
+  /**
+   * validate credential
+   * @public
+   * @param {AsiaBillCredential} credential
+   * @returns {Promise<{*}>}
+   */
+  async validateCredential(credential) {
+    const result = schemaCredential.validate(credential);
+    if (result.error) {
+      throw result.error;
+    }
+
+    const requestPayload = {
+      merNo: credential.merNo,
+      gatewayNo: credential.gatewayNo,
+      orderNo: '999999999999',
+    };
+
+    requestPayload.signInfo = sign(
+        [
+          credential.merNo,
+          credential.gatewayNo,
+          credential.signKey,
+        ],
+    );
+
+    const url = credential.isTestMode ?
+      process.env.ASIABILL_RETRIEVE_URL_TEST_MODE :
+      process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE;
+
+    const response = await Axios.getInstance().post(url, requestPayload);
+
+    if (response.status > 201) {
+      // Some errors occurred
+      throw new Error('Some errors occurred. detail: ' + response.statusText);
+    }
+
+    // Just status 6 is invalid account
+    const restrictedStatus = ['5'];
+    const validStatus = ['-2', '-1', '0', '1', '2'];
+    const errorStatus = ['7', '999'];
+
+    const tradeInfo = response.data.response.tradeinfo;
+
+    if (errorStatus.indexOf(tradeInfo.queryResult) > -1) {
+      throw new Error('Some errors occurred. detail: ' + response.statusText);
+    }
+
+    if (validStatus.indexOf(tradeInfo.queryResult) > -1) {
+      return {
+        status: RESULT_VALID,
+      };
+    }
+
+    if (restrictedStatus.indexOf(tradeInfo.queryResult) > -1) {
+      return {
+        status: RESULT_RESTRICTED,
+      };
+    }
+
+    return {
+      status: RESULT_INVALID,
     };
   }
 

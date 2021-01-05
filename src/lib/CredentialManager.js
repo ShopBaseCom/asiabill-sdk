@@ -30,7 +30,7 @@ class CredentialManager {
     try {
       const credential = await this.storage.get(key);
       if (credential) {
-        return credential;
+        return JSON.parse(credential);
       }
     } catch (e) {
       logger.error(e);
@@ -76,5 +76,6 @@ class CredentialManager {
     return `${process.env.CACHE_KEY_URL}/${id}`;
   }
 }
+
 
 module.exports = CredentialManager;

@@ -11,7 +11,7 @@ const StatusCodes = require('../constants/statusCodes');
 const SignInvalidError = require('../errors/SignInvalid');
 const InvalidAccountError = require('../errors/InvalidAccountError');
 const ShopBaseSystemError = require('../errors/ShopBaseSystemError');
-const {parseOrderResponse} = require('../parser/redirect');
+const {parseOrderResponse} = require('../parser/response');
 const {redirectWithSignRequestToShopBase} = require('../lib/ResponseHelper');
 const {
   ERROR_PROCESSING_ERROR,

@@ -20,4 +20,17 @@ const schemaOrderRequest = Joi.object().keys({
   billingAddress: schemaAddress.required(),
 });
 
-module.exports = schemaOrderRequest;
+
+const schemaGetTransactionRequest = Joi.object().keys({
+  accountId: Joi.string().required(),
+  reference: Joi.string().required(),
+  transactionType: Joi.string().required(),
+});
+
+const schemaCaptureOrVoidRequest = Joi.object().keys({
+  accountId: Joi.string(),
+  gatewayReference: Joi.string().required(),
+  transactionType: Joi.string().required(),
+});
+
+module.exports = {schemaOrderRequest, schemaGetTransactionRequest, schemaCaptureOrVoidRequest};

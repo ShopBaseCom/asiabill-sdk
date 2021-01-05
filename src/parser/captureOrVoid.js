@@ -6,7 +6,6 @@ const schemaCaptureOrVoidPaymentRequest = Joi.object({
   x_account_id: Joi.string().required(),
   x_reference: Joi.string().required(),
   x_gateway_reference: Joi.string().required(),
-  x_transaction_type: Joi.string().required(),
   x_signature: Joi.string().required(),
 });
 
@@ -28,7 +27,6 @@ async function parseCaptureOrVoidRequest(request) {
     accountId: value['x_account_id'],
     reference: value['x_reference'],
     gatewayReference: value['x_gateway_reference'],
-    transactionType: value['x_transaction_type'],
   };
 }
 

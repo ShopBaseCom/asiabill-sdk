@@ -11,6 +11,8 @@ const {handleError} = require('../lib/ResponseHelper');
 const {parseOrderResponse} = require('../parser/response');
 
 const creManager = new CredentialManager(redis);
+const paymentGateway = new PaymentGateway();
+
 /**
  * @param {Express.request} req
  * @param {Express.response} res
@@ -20,7 +22,6 @@ async function getTransactionHandler(req, res) {
   try {
     const getTransactionReq = await parseGetTransactionRequest(req.query);
     const credential = await creManager.getById(getTransactionReq.accountId);
-    const paymentGateway = new PaymentGateway();
 
     const response = await paymentGateway.getTransaction(getTransactionReq, credential);
 

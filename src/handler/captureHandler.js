@@ -9,8 +9,9 @@ const CredentialManager = require('../lib/CredentialManager');
 const ShopBaseSigner = require('../lib/Signer');
 const {handleError} = require('../lib/ResponseHelper');
 const {parseOrderManagementResponse} = require('../parser/response');
-const creManager = new CredentialManager(redis);
 
+const creManager = new CredentialManager(redis);
+const paymentGateway = new PaymentGateway();
 /**
  * @param {Express.request} req
  * @param {Express.response} res
@@ -20,7 +21,6 @@ async function captureHandler(req, res) {
   try {
     const captureReq = await parseCaptureRequest(req.body);
     const credential = await creManager.getById(captureReq.accountId);
-    const paymentGateway = new PaymentGateway();
 
     const response = await paymentGateway.capture(captureReq, credential);
 

@@ -11,6 +11,7 @@ const {handleError} = require('../lib/ResponseHelper');
 const {parseOrderManagementResponse} = require('../parser/response');
 
 const creManager = new CredentialManager(redis);
+const paymentGateway = new PaymentGateway();
 
 /**
  * @param {Express.request} req
@@ -21,7 +22,6 @@ async function voidHandler(req, res) {
   try {
     const voidReq = await parseVoidRequest(req.body);
     const credential = await creManager.getById(voidReq.accountId);
-    const paymentGateway = new PaymentGateway();
 
     const response = await paymentGateway.void(voidReq, credential);
 

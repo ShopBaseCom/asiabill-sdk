@@ -40,7 +40,7 @@ const schemaGetTransactionRequest = Joi.object().keys({
 const schemaCaptureOrVoidRequest = Joi.object().keys({
   accountId: Joi.string(),
   gatewayReference: Joi.string().required(),
-  transactionType: Joi.string().required(),
+  authType: Joi.number().required().allow(1, 2),
 });
 
 module.exports = {schemaOrderRequest, schemaGetTransactionRequest, schemaCaptureOrVoidRequest};

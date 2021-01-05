@@ -12,6 +12,8 @@ const {
   INTERFACE_INFO,
 } = require('./constant');
 const Axios = require('../lib/Axios');
+const {TRANSACTION_TYPE_CAPTURE} = require('../constants');
+const {TRANSACTION_TYPE_VOID} = require('../constants');
 
 /**
  * Class representing a AsianBill gateway.
@@ -325,7 +327,7 @@ class AsiaBillPaymentGateway {
    */
   async void(voidRequest, credential) {
     return this.captureOrVoid({
-      ...captureRequest,
+      ...voidRequest,
       authType: TRANSACTION_TYPES.VOID,
     }, credential);
   }
@@ -392,7 +394,8 @@ class AsiaBillPaymentGateway {
     return {
       gatewayReference: captureOrVoidRes.respon.tradeNo,
       reference: captureOrVoidReqValid.reference,
-      transactionType: captureOrVoidReqValid.transactionType,
+      transactionType: captureOrVoidReqValid.authType === TRANSACTION_TYPES.CAPTURE ?
+        TRANSACTION_TYPE_CAPTURE :TRANSACTION_TYPE_VOID,
       result,
       timestamp: new Date().toISOString(),
       errorCode,

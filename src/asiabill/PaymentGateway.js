@@ -333,13 +333,12 @@ class AsiaBillPaymentGateway {
 
     const response = await Axios.getInstance().post(url, requestPayload);
     const captureOrVoidRes = await schemaCaptureOrVoidResponse.validateAsync(
-        response.data.response,
+        response.data,
         {
           allowUnknown: true,
         },
     );
 
-    const tradeInfo = captureOrVoidRes.tradeinfo;
 
     let errorCode;
     let errorMessage;
@@ -352,10 +351,10 @@ class AsiaBillPaymentGateway {
       errorMessage = result.errorMessage;
     }
 
-    const result = tradeInfo.orderStatus === TRANSACTION_STATUS.SUCCESS ? RESULT_COMPLETED : RESULT_FAILED;
+    const result = captureOrVoidRes.respon.orderStatus === TRANSACTION_STATUS.SUCCESS ? RESULT_COMPLETED : RESULT_FAILED;
     return {
-      gatewayReference: tradeInfo.tradeNo,
-      reference: this.getRefFromResponseGateway(tradeInfo),
+      gatewayReference: captureOrVoidRes.respon.tradeNo,
+      reference: captureOrVoidReqValid.reference,
       transactionType: captureOrVoidReqValid.transactionType,
       result,
       timestamp: new Date().toISOString(),

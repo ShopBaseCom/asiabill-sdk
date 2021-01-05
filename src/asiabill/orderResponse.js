@@ -27,7 +27,7 @@ const schemaGetTransactionResponse = Joi.object().keys({
 });
 
 const schemaCaptureOrVoidResponse = Joi.object().keys({
-  tradeinfo: Joi.object().keys({
+  respon: Joi.object().keys({
     merNo: Joi.string().allow(null, ''),
     gatewayNo: Joi.string().allow(null, ''),
     tradeNo: Joi.string().allow(null, ''),

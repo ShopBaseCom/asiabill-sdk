@@ -3,7 +3,8 @@ const createOrderHandler = require('./src/handler/createOrder');
 const gatewayWebhookHandler = require('./src/handler/gatewayWebhookHandler');
 const gatewayConfirmHandler = require('./src/handler/gatewayConfirmHandler');
 const getTransactionInfoHandler = require('./src/handler/getTransactionHandler');
-const captureOrVoidHandler = require('./src/handler/captureOrVoidHandler');
+const captureHandler = require('./src/handler/captureHandler');
+const voidHandler = require('./src/handler/voidHandler');
 
 const router = new express.Router();
 
@@ -22,6 +23,8 @@ router.get('/test', async (req, res) => {
 
 router.get('/transaction', getTransactionInfoHandler);
 
-router.post('/capture_or_void', captureOrVoidHandler);
+router.post('/capture', captureHandler);
+
+router.post('/void', voidHandler);
 
 module.exports = router;

@@ -5,13 +5,15 @@ const {schemaOrderResponse, schemaGetTransactionResponse, schemaCaptureOrVoidRes
 const logger = require('../lib/logger');
 const Joi = require('joi');
 const {TRANSACTION_TYPE_AUTHORIZATION, RESULT_COMPLETED, RESULT_FAILED} = require('../constants');
-const {TRANSACTION_STATUS} = require('./constant');
+const {TRANSACTION_STATUS, TRANSACTION_TYPES} = require('./constant');
 const {
   ERROR_PROCESSING_ERROR, ERROR_CARD_DECLINED, MAP_ERROR,
   PAYMENT_METHOD,
   INTERFACE_INFO,
 } = require('./constant');
 const Axios = require('../lib/Axios');
+const {TRANSACTION_TYPE_CAPTURE} = require('../constants');
+const {TRANSACTION_TYPE_VOID} = require('../constants');
 
 /**
  * Class representing a AsianBill gateway.
@@ -217,9 +219,15 @@ class AsiaBillPaymentGateway {
       };
     }
 
-    let [code, message] = orderInfo.split(':');
+    let [code, message] = orderInfo.split('_');
 
     let errorCode = MAP_ERROR[code];
+
+    if (!errorCode) {
+      [code, message] = orderInfo.split(':');
+    }
+
+    errorCode = MAP_ERROR[code];
 
     if (!errorCode) {
       logger.error('cannot detect error code', {orderInfo});
@@ -295,8 +303,39 @@ class AsiaBillPaymentGateway {
   }
 
   /**
-   * capture or void a payment
+   * capture a payment
    * @public
+   * @throws {Joi.ValidationError} will throw when validate fail
+   * @param {captureRequest} captureRequest
+   * @param {AsiaBillCredential} credential
+   * @return {Promise<orderManagementResponse>}
+   */
+  async capture(captureRequest, credential) {
+    return this.captureOrVoid({
+      ...captureRequest,
+      authType: TRANSACTION_TYPES.CAPTURE,
+    }, credential);
+  }
+
+  /**
+   * void a payment
+   * @public
+   * @throws {Joi.ValidationError} will throw when validate fail
+   * @param {voidRequest} voidRequest
+   * @param {AsiaBillCredential} credential
+   * @return {Promise<orderManagementResponse>}
+   */
+  async void(voidRequest, credential) {
+    return this.captureOrVoid({
+      ...voidRequest,
+      authType: TRANSACTION_TYPES.VOID,
+    }, credential);
+  }
+
+
+  /**
+   * capture or void a payment
+   * @private
    * @throws {Joi.ValidationError} will throw when validate fail
    * @param {captureOrVoidRequest} captureOrVoidRequest
    * @param {AsiaBillCredential} credential
@@ -313,7 +352,7 @@ class AsiaBillPaymentGateway {
       merNo: credential.merNo,
       gatewayNo: credential.gatewayNo,
       tradeNo: captureOrVoidReqValid.gatewayReference,
-      authType: captureOrVoidReqValid.transactionType,
+      authType: captureOrVoidReqValid.authType,
       remark: captureOrVoidReqValid.accountId,
     };
 
@@ -339,23 +378,24 @@ class AsiaBillPaymentGateway {
         },
     );
 
+    const result = parseInt(captureOrVoidRes.respon.orderStatus) === TRANSACTION_STATUS.SUCCESS ?
+      RESULT_COMPLETED : RESULT_FAILED;
 
     let errorCode;
     let errorMessage;
 
-    if (captureOrVoidRes.orderStatus === TRANSACTION_STATUS.FAILURE) {
-      const result = this.getErrorCodeAndMessage(
-          captureOrVoidRes.orderInfo,
+    if (result === RESULT_FAILED) {
+      const errResult = this.getErrorCodeAndMessage(
+          captureOrVoidRes.respon.orderInfo,
       );
-      errorCode = result.errorCode;
-      errorMessage = result.errorMessage;
+      errorCode = errResult.errorCode;
+      errorMessage = errResult.errorMessage;
     }
-
-    const result = captureOrVoidRes.respon.orderStatus === TRANSACTION_STATUS.SUCCESS ? RESULT_COMPLETED : RESULT_FAILED;
     return {
       gatewayReference: captureOrVoidRes.respon.tradeNo,
       reference: captureOrVoidReqValid.reference,
-      transactionType: captureOrVoidReqValid.transactionType,
+      transactionType: captureOrVoidReqValid.authType === TRANSACTION_TYPES.CAPTURE ?
+        TRANSACTION_TYPE_CAPTURE :TRANSACTION_TYPE_VOID,
       result,
       timestamp: new Date().toISOString(),
       errorCode,

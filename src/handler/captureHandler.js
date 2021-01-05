@@ -3,27 +3,26 @@ const {
 } = require('../constants');
 
 const PaymentGateway = require('../asiabill/PaymentGateway');
-const {parseCaptureOrVoidRequest} = require('../parser/captureOrVoid');
+const {parseCaptureRequest} = require('../parser/capture');
 const redis = require('../lib/redis');
 const CredentialManager = require('../lib/CredentialManager');
 const ShopBaseSigner = require('../lib/Signer');
 const {handleError} = require('../lib/ResponseHelper');
-const {parseOrderManagementResponse} = require('../parser/response')
+const {parseOrderManagementResponse} = require('../parser/response');
 
 const creManager = new CredentialManager(redis);
-
+const paymentGateway = new PaymentGateway();
 /**
  * @param {Express.request} req
  * @param {Express.response} res
  * @return {Promise<*>}
  */
-async function captureOrVoidHandler(req, res) {
+async function captureHandler(req, res) {
   try {
-    const captureOrVoidReq = await parseCaptureOrVoidRequest(req.body);
-    const credential = await creManager.getById(captureOrVoidReq.accountId);
-    const paymentGateway = new PaymentGateway();
+    const captureReq = await parseCaptureRequest(req.body);
+    const credential = await creManager.getById(captureReq.accountId);
 
-    const response = await paymentGateway.captureOrVoid(captureOrVoidReq, credential);
+    const response = await paymentGateway.capture(captureReq, credential);
 
     return res.status(StatusCodes.OK).json(ShopBaseSigner.sign(parseOrderManagementResponse(response)));
   } catch (e) {
@@ -31,4 +30,4 @@ async function captureOrVoidHandler(req, res) {
   }
 }
 
-module.exports = captureOrVoidHandler;
+module.exports = captureHandler;

@@ -35,7 +35,7 @@
  * Get accountId from body response gateway
  * @function
  * @param {orderRequest} orderRequest
- * @param {AsiaBillCredential} credential
+ * @param {PaymentGatewayCredential} credential
  * @name PaymentGateway#getDataCreateOrder
  * @returns {Promise<redirectRequest>}
  */
@@ -44,7 +44,7 @@
  * @function
  * @throws {Joi.ValidationError, SignInvalidError}
  * @param {Object} body
- * @param {AsiaBillCredential} credential
+ * @param {PaymentGatewayCredential} credential
  * @name PaymentGateway#getOrderResponse
  * @return {Promise<orderResponse>}
  */
@@ -53,7 +53,16 @@
  * @function
  * @throws {Joi.ValidationError}
  * @param {getTransactionRequest} getTransactionRequest
- * @param {AsiaBillCredential} credential
+ * @param {PaymentGatewayCredential} credential
+ * @name PaymentGateway#getTransaction
+ * @return {Promise<orderResponse>}
+ */
+
+/**
+ * @function
+ * @throws {Joi.ValidationError}
+ * @param {getTransactionRequest}
+ * @param {PaymentGatewayCredential} credential
  * @name PaymentGateway#getTransaction
  * @return {Promise<orderResponse>}
  */

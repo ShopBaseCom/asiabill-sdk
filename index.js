@@ -16,6 +16,6 @@ app.set('view engine', 'ejs');
 app.use(asianBillRouter);
 
 app.listen(process.env.PORT, () => {
-  logger.info('update3');
+  logger.info('update4');
   logger.info(`app listening at ${process.env.PORT}`);
 });

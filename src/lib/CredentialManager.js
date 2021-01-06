@@ -46,6 +46,7 @@ class CredentialManager {
       }
 
       await this.storage.set(key, JSON.stringify(response.data.x_gateway_credentials));
+      this.redis.expire(key, 60 * 60 * 24);
       return response.data.x_gateway_credentials;
     } catch (e) {
       if (!e.response || !e.response.data) {

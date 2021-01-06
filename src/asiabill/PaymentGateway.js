@@ -193,7 +193,7 @@ class AsiaBillPaymentGateway {
       gatewayReference: orderResValid['tradeNo'],
       isPostPurchase: this.isPostPurchase(orderResValid),
       isSuccess: orderResValid['orderStatus'] === TRANSACTION_STATUS.SUCCESS,
-      isTest: credential.isTestMode,
+      isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
       isCancel: false,
       transactionType: TRANSACTION_TYPE_AUTHORIZATION,
@@ -253,7 +253,7 @@ class AsiaBillPaymentGateway {
     );
     const orderNo = getTransactionInfoReqValid.reference;
 
-    const url = credential.isTestMode ?
+    const url = credential.sandbox ?
       process.env.ASIABILL_RETRIEVE_URL_TEST_MODE :
       process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE;
 
@@ -286,7 +286,7 @@ class AsiaBillPaymentGateway {
       accountId: getTransactionInfoReqValid.accountId,
       reference: this.getRefFromResponseGateway(tradeInfo),
       currency: tradeInfo.tradeCurrency,
-      isTest: credential.isTestMode,
+      isTest: credential.sandbox,
       amount: tradeInfo.tradeAmount,
       gatewayReference: tradeInfo.tradeNo,
       result,
@@ -327,7 +327,7 @@ class AsiaBillPaymentGateway {
         ],
     );
 
-    const url = credential.isTestMode ?
+    const url = credential.sandbox ?
       process.env.ASIABILL_CAPTURE_VOID_URL_TEST_MODE :
       process.env.ASIABILL_CAPTURE_VOID_URL_LIVE_MODE;
 
@@ -377,7 +377,7 @@ class AsiaBillPaymentGateway {
    * @return {string}
    */
   getUrlApi(credential) {
-    if (credential.isTestMode) {
+    if (credential.sandbox) {
       return process.env.ASIABILL_URL_TEST_MODE;
     }
 

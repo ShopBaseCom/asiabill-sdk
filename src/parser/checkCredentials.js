@@ -16,9 +16,10 @@ const schemaCheckCredentialsRequest = Joi.object({
  */
 async function parseCheckCredentialsRequest(request) {
   const value = await schemaCheckCredentialsRequest.validateAsync(request.body);
-  // if (!ShopBaseSigner.verify(request, request.header('X-Signature'))) {
-  //   throw new SignInvalidError('signature invalid');
-  // }
+  const sign = request.header('X-Signature');
+  if (!ShopBaseSigner.verify(request.body, sign)) {
+    throw new SignInvalidError('signature invalid');
+  }
   return {
     shopId: value['x_shop_id'],
     gatewayCredentials: value['x_gateway_credentials'],

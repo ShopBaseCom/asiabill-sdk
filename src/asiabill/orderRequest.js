@@ -1,14 +1,5 @@
-/**
- @typedef captureOrVoidRequest
- @type {Object}
- @property {string} accountId
- @property {string} reference
- @property {string} gatewayReference
- @property {number} authType
- */
-
-
 const Joi = require('joi');
+const {REFUND_TYPE_PARTIAL, REFUND_TYPE_FULL} = require('../constants');
 
 const schemaAddress = Joi.object({
   phone: Joi.string().max(50).required(),
@@ -37,10 +28,33 @@ const schemaGetTransactionRequest = Joi.object().keys({
   transactionType: Joi.string().required(),
 });
 
-const schemaCaptureOrVoidRequest = Joi.object().keys({
+const schemaCaptureRequest = Joi.object().keys({
   accountId: Joi.string(),
+  reference: Joi.string().required(),
   gatewayReference: Joi.string().required(),
-  authType: Joi.number().required().allow(1, 2),
+  transactionType: Joi.string().required(),
 });
 
-module.exports = {schemaOrderRequest, schemaGetTransactionRequest, schemaCaptureOrVoidRequest};
+const schemaVoidRequest = Joi.object().keys({
+  accountId: Joi.string(),
+  reference: Joi.string().required(),
+  gatewayReference: Joi.string().required(),
+  transactionType: Joi.string().required(),
+});
+
+const schemaRefundRequest = Joi.object().keys({
+  // remark
+  accountId: Joi.string(),
+  reference: Joi.string().required(),
+  // tradeNo
+  gatewayReference: Joi.string().required(),
+  refundType: Joi.number().required().allow(REFUND_TYPE_FULL, REFUND_TYPE_PARTIAL),
+  // tradeAmount
+  transactionAmount: Joi.number().required(),
+  // refundAmount
+  amount: Joi.number().required(),
+  currency: Joi.string().max(3).required(),
+  refundReason: Joi.string().required(),
+});
+
+module.exports = {schemaOrderRequest, schemaGetTransactionRequest, schemaCaptureRequest, schemaVoidRequest, schemaRefundRequest};

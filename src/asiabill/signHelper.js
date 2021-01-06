@@ -1,12 +1,6 @@
 const crypto = require('crypto');
 
 /**
- @typedef signValues
- @type {Array}
- */
-
-
-/**
  * @public
  * @function
  * @param {signValues} signValues

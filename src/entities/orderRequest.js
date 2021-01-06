@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 
 /**
- @typedef address
+ @typedef customerAddress
  @type {Object}
  @property {string} line1 Address line 1 (e.g., street, PO Box, or company name).
  @property {string} city City, district, suburb, town, or village.
@@ -13,15 +13,27 @@
  */
 
 /**
+ @typedef urlObject
+ @type {Object}
+ @property {string} cancelUrl
+ @property {string} returnUrl
+ @property {string} callbackUrl
+ */
+
+/**
  @typedef orderRequest
  @type {Object}
- @property {address} billingAddress Billing information for order.
- @property {address} shippingAddress Billing information for order.
+ @property {customerAddress} billingAddress Billing information for order.
+ @property {customerAddress} shippingAddress Shipping information for order.
  @property {string} currency The three-character ISO-4217 currency code that identifies the currency.
- @property {string} amount
- @property {string} returnUrl
+ @property {number} amount
  @property {string} firstName
  @property {string} lastName
  @property {string} email
+ @property {urlObject} urlObject
+ @property {boolean} isPostPurchase
+ @property {string} shopName
+ @property {string} reference
+ @property {number} accountId
  */
 

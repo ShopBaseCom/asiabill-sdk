@@ -5,20 +5,65 @@
  */
 
 /**
- * Get the color as an array of red, green, and blue values, represented as
- * decimal numbers between 0 and 1.
  *
- * @function
- * @param {paymentGatewayPayload} payload
- * @name PaymentGateway#constructor
+ * @throws {Joi.ValidationError}
+ * @public
+ * @param {Object} body
+ * @name PaymentGateway#getAccountIdFromResponseGateway
+ * @return {string}
  */
 
 /**
- * Get the color as an array of red, green, and blue values, represented as
- * decimal numbers between 0 and 1.
  *
+ * @throws {Joi.ValidationError}
+ * @function
+ * @param {Object} body
+ * @name PaymentGateway#getRefFromResponseGateway
+ * @return {string}
+ */
+
+/**
+ *
+ * @throws {Joi.ValidationError}
+ * @function
+ * @param {Object} body
+ * @name PaymentGateway#isPostPurchase
+ * @return {boolean}
+ */
+
+/**
+ * Get accountId from body response gateway
  * @function
  * @param {orderRequest} orderRequest
- * @name PaymentGateway#createOrder
- * @returns {Object}
+ * @param {PaymentGatewayCredential} credential
+ * @name PaymentGateway#getDataCreateOrder
+ * @returns {Promise<redirectRequest>}
+ */
+
+/**
+ * @function
+ * @throws {Joi.ValidationError, SignInvalidError}
+ * @param {Object} body
+ * @param {PaymentGatewayCredential} credential
+ * @name PaymentGateway#getOrderResponse
+ * @return {Promise<orderResponse>}
+ */
+
+
+/**
+ * @function
+ * @throws {Joi.ValidationError}
+ * @param {getTransactionRequest} getTransactionRequest
+ * @param {PaymentGatewayCredential} credential
+ * @name PaymentGateway#getTransaction
+ * @return {Promise<orderResponse>}
+ */
+
+/**
+ * @function
+ * @throws {Joi.ValidationError}
+ * @param {getTransactionRequest}
+ * @param {PaymentGatewayCredential} credential
+ * @name PaymentGateway#getTransaction
+ * @return {Promise<orderResponse>}
  */

@@ -402,7 +402,7 @@ class AsiaBillPaymentGateway {
       gatewayReference: captureOrVoidRes.respon.tradeNo,
       reference: captureOrVoidReqValid.reference,
       transactionType: captureOrVoidReqValid.authType === TRANSACTION_TYPES.CAPTURE ?
-        TRANSACTION_TYPE_CAPTURE :TRANSACTION_TYPE_VOID,
+        TRANSACTION_TYPE_CAPTURE : TRANSACTION_TYPE_VOID,
       result,
       timestamp: new Date().toISOString(),
       errorCode,
@@ -414,7 +414,8 @@ class AsiaBillPaymentGateway {
    * validate credential
    * @public
    * @param {AsiaBillCredential} credential
-   * @returns {Promise<{*}>}
+   * @throws {Error} will throw when validate fail
+   * @return {Promise<*>}
    */
   async validateCredential(credential) {
     const result = schemaCredential.validate(credential);
@@ -447,10 +448,16 @@ class AsiaBillPaymentGateway {
       throw new Error('Some errors occurred. detail: ' + response.statusText);
     }
 
-    // Just status 6 is invalid account
-    const restrictedStatus = ['5'];
-    const validStatus = ['-2', '-1', '0', '1', '2'];
-    const errorStatus = ['7', '999'];
+    // Just status MERCHANT_GATEWAY_ACCESS_ERROR is invalid account
+    const restrictedStatus = [TRANSACTION_STATUS.MERCHANT_GATEWAY_ACCESS_ERROR];
+    const validStatus = [
+      TRANSACTION_STATUS.TO_BE_CONFIRMED,
+      TRANSACTION_STATUS.PENDING,
+      TRANSACTION_STATUS.FAILURE,
+      TRANSACTION_STATUS.SUCCESS,
+      TRANSACTION_STATUS.ORDER_DOES_NOT_EXIST,
+    ];
+    const errorStatus = [TRANSACTION_STATUS.ACCESS_IP_ERROR, TRANSACTION_STATUS.QUERY_SYSTEM_ERROR];
 
     const tradeInfo = response.data.response.tradeinfo;
 
@@ -458,13 +465,14 @@ class AsiaBillPaymentGateway {
       throw new Error('Some errors occurred. detail: ' + response.statusText);
     }
 
-    if (validStatus.indexOf(tradeInfo.queryResult) > -1) {
+    const queryResult = parseInt(tradeInfo.queryResult);
+    if (validStatus.indexOf(queryResult) > -1) {
       return {
         status: RESULT_VALID,
       };
     }
 
-    if (restrictedStatus.indexOf(tradeInfo.queryResult) > -1) {
+    if (restrictedStatus.indexOf(queryResult) > -1) {
       return {
         status: RESULT_RESTRICTED,
       };

@@ -3,6 +3,7 @@ const StatusCodes = require('../constants/statusCodes');
 const {parseCheckCredentialsRequest} = require('../parser/checkCredentials');
 const {handleError} = require('../lib/ResponseHelper');
 const PaymentGateway = require('../asiabill/PaymentGateway');
+const {responseWithSign} = require('../lib/ResponseHelper');
 
 /**
  * @param {Express.request} req
@@ -12,18 +13,16 @@ const PaymentGateway = require('../asiabill/PaymentGateway');
 async function gatewayCheckCredentialsHandler(req, res) {
   try {
     const checkCredentialsRequest = await parseCheckCredentialsRequest(req);
-    // const credential = await creManager.getById(checkCredentialsRequest.shopId);
     // Make a request to asiabill to validate credentials
     const paymentGateway = new PaymentGateway();
 
     const result = await paymentGateway.validateCredential(checkCredentialsRequest.gatewayCredentials);
     logger.info(result);
-
-    return res.status(StatusCodes.OK).json({
+    return responseWithSign(res, StatusCodes.OK, {
       x_result: result.status,
     });
   } catch (e) {
-    return handleError(res, e);
+    handleError(res, e);
   }
 }
 

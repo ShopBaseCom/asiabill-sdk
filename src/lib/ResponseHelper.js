@@ -62,8 +62,7 @@ function handleError(res, err) {
  * @return {*}
  */
 function responseWithSign(res, httpStatus, body) {
-  res.status(httpStatus);
-  return ShopBaseSigner.signResponse(res, body);
+  return ShopBaseSigner.signResponse(res, httpStatus, body);
 }
 
 module.exports = {redirectWithSignRequestToShopBase, handleError, responseWithSign};

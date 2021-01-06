@@ -1,13 +1,3 @@
-/**
- * config credential
- @typedef AsiaBillCredential
- @type {Object}
- @property {boolean} isTestMode
- @property {string} merNo
- @property {string} gatewayNo
- @property {string} signKey
- */
-
 const Joi = require('joi');
 
 const schemaCredential = Joi.object({

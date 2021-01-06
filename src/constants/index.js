@@ -24,6 +24,10 @@ const {
   TRANSACTION_TYPE_VOID,
 } = require('./transaction');
 
+const {
+  REFUND_TYPE_FULL,
+  REFUND_TYPE_PARTIAL,
+} = require('./refund');
 module.exports = {
   ERROR_CARD_DECLINED,
   ERROR_PROCESSING_ERROR,
@@ -44,4 +48,7 @@ module.exports = {
   TRANSACTION_TYPE_CAPTURE,
   TRANSACTION_TYPE_REFUND,
   TRANSACTION_TYPE_VOID,
+
+  REFUND_TYPE_FULL,
+  REFUND_TYPE_PARTIAL,
 };

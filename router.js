@@ -5,6 +5,7 @@ const gatewayConfirmHandler = require('./src/handler/gatewayConfirmHandler');
 const getTransactionInfoHandler = require('./src/handler/getTransactionHandler');
 const captureHandler = require('./src/handler/captureHandler');
 const voidHandler = require('./src/handler/voidHandler');
+const refundHandler = require('./src/handler/refundHandler');
 
 const router = new express.Router();
 
@@ -26,5 +27,7 @@ router.get('/transaction', getTransactionInfoHandler);
 router.post('/capture', captureHandler);
 
 router.post('/void', voidHandler);
+
+router.post('/refund', refundHandler);
 
 module.exports = router;

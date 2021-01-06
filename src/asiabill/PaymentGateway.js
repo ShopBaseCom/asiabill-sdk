@@ -310,13 +310,18 @@ class AsiaBillPaymentGateway {
     const tradeInfo = getTransactionRes.tradeinfo;
 
     const result = parseInt(tradeInfo.queryResult) === TRANSACTION_STATUS.SUCCESS ? RESULT_COMPLETED : RESULT_FAILED;
+
+    let amount = parseFloat(tradeInfo.tradeAmount);
+    if (isNaN(amount) || amount < 0) {
+      amount = 0;
+    }
     return {
       timestamp: new Date().toISOString(),
       accountId: getTransactionInfoReqValid.accountId,
       reference: this.getRefFromResponseGateway(tradeInfo),
       currency: tradeInfo.tradeCurrency,
       isTest: credential.sandbox,
-      amount: tradeInfo.tradeAmount,
+      amount,
       gatewayReference: tradeInfo.tradeNo,
       result,
       transactionType: getTransactionInfoReqValid.transactionType,

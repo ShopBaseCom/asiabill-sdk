@@ -3,12 +3,12 @@ const {
 } = require('../constants');
 
 const PaymentGateway = require('../asiabill/PaymentGateway');
-const {parseGetTransactionRequest} = require('../parser/getTransaction');
+const {parseVoidRequest} = require('../parser/void');
 const redis = require('../lib/redis');
 const CredentialManager = require('../lib/CredentialManager');
 const ShopBaseSigner = require('../lib/Signer');
 const {handleError} = require('../lib/ResponseHelper');
-const {parseOrderResponse} = require('../parser/response');
+const {parseOrderManagementResponse} = require('../parser/response');
 
 const creManager = new CredentialManager(redis);
 const paymentGateway = new PaymentGateway();
@@ -18,17 +18,17 @@ const paymentGateway = new PaymentGateway();
  * @param {Express.response} res
  * @return {Promise<*>}
  */
-async function getTransactionHandler(req, res) {
+async function voidHandler(req, res) {
   try {
-    const getTransactionReq = await parseGetTransactionRequest(req.query);
-    const credential = await creManager.getById(getTransactionReq.accountId);
+    const voidReq = await parseVoidRequest(req.body);
+    const credential = await creManager.getById(voidReq.accountId);
 
-    const response = await paymentGateway.getTransaction(getTransactionReq, credential);
+    const response = await paymentGateway.void(voidReq, credential);
 
-    return res.status(StatusCodes.OK).json(ShopBaseSigner.sign(parseOrderResponse(response)));
+    return res.status(StatusCodes.OK).json(ShopBaseSigner.sign(parseOrderManagementResponse(response)));
   } catch (e) {
     handleError(res, e);
   }
 }
 
-module.exports = getTransactionHandler;
+module.exports = voidHandler;

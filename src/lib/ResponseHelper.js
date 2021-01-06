@@ -55,4 +55,14 @@ function handleError(res, err) {
   });
 }
 
-module.exports = {redirectWithSignRequestToShopBase, handleError};
+/**
+ * @param {Express.response} res
+ * @param {integer} httpStatus
+ * @param {Object} body
+ * @return {*}
+ */
+function responseWithSign(res, httpStatus, body) {
+  return ShopBaseSigner.signResponse(res, httpStatus, body);
+}
+
+module.exports = {redirectWithSignRequestToShopBase, handleError, responseWithSign};

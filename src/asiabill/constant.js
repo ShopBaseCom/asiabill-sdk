@@ -126,6 +126,16 @@ const MAP_ERROR = {
   E0004: ERROR_PROCESSING_ERROR, // Sending failed
   E0005: ERROR_PROCESSING_ERROR, // Invoking failed
   E0006: ERROR_PAYMENT_NOT_SUPPORTED, // The channel code that the bank returned does not exist
+  A0001: ERROR_PROCESSING_ERROR, // Authorization type cannot be empty
+  A0002: ERROR_PROCESSING_ERROR, // Wrong authorization type
+  A0003: ERROR_PROCESSING_ERROR, // The return URL cannot be empty
+  A0004: ERROR_PROCESSING_ERROR, // The length of the return URL is too long and cannot exceed 100
+  A0005: ERROR_PROCESSING_ERROR, // Serial order number cannot be empty
+  A0006: ERROR_PROCESSING_ERROR, // Incorrect serial number
+  A0007: ERROR_PROCESSING_ERROR, // This order is not a pre-authorized transaction
+  A0008: ERROR_PROCESSING_ERROR, // This order cannot initiate an authorization operation
+  A0009: ERROR_PROCESSING_ERROR, // Exceeded the authorization completion time limit
+  A0010: ERROR_PROCESSING_ERROR, // Remarks cannot exceed 100 characters
 };
 
 const TRANSACTION_STATUS = {
@@ -133,6 +143,19 @@ const TRANSACTION_STATUS = {
   PENDING: -1,
   FAILURE: 0,
   SUCCESS: 1,
+  ORDER_DOES_NOT_EXIST: 2,
+  // Follows docs
+  INCOMING_PARAMETERS_INCOMPLETE: 3,
+  ORDER_AN_EXCESSIVE_NUMBER: 4,
+  MERCHANT_GATEWAY_ACCESS_ERROR: 5,
+  SIGNINFO_ERROR: 6,
+  ACCESS_IP_ERROR: 7,
+  QUERY_SYSTEM_ERROR: 999,
 };
 
-module.exports = {PAYMENT_METHOD, INTERFACE_INFO, MAP_ERROR, TRANSACTION_STATUS};
+const TRANSACTION_TYPES = {
+  CAPTURE: 1,
+  VOID: 2,
+};
+
+module.exports = {PAYMENT_METHOD, INTERFACE_INFO, MAP_ERROR, TRANSACTION_STATUS, TRANSACTION_TYPES};

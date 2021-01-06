@@ -4,7 +4,14 @@ const sign = require('./signHelper');
 const {schemaOrderResponse, schemaGetTransactionResponse, schemaCaptureOrVoidResponse} = require('./orderResponse');
 const logger = require('../lib/logger');
 const Joi = require('joi');
-const {TRANSACTION_TYPE_AUTHORIZATION, RESULT_COMPLETED, RESULT_FAILED} = require('../constants');
+const {
+  TRANSACTION_TYPE_AUTHORIZATION,
+  RESULT_COMPLETED,
+  RESULT_FAILED,
+  RESULT_INVALID,
+  RESULT_VALID,
+  RESULT_RESTRICTED,
+} = require('../constants');
 const {TRANSACTION_STATUS, TRANSACTION_TYPES} = require('./constant');
 const {
   ERROR_PROCESSING_ERROR, ERROR_CARD_DECLINED, MAP_ERROR,
@@ -395,11 +402,84 @@ class AsiaBillPaymentGateway {
       gatewayReference: captureOrVoidRes.respon.tradeNo,
       reference: captureOrVoidReqValid.reference,
       transactionType: captureOrVoidReqValid.authType === TRANSACTION_TYPES.CAPTURE ?
-        TRANSACTION_TYPE_CAPTURE :TRANSACTION_TYPE_VOID,
+        TRANSACTION_TYPE_CAPTURE : TRANSACTION_TYPE_VOID,
       result,
       timestamp: new Date().toISOString(),
       errorCode,
       errorMessage,
+    };
+  }
+
+  /**
+   * validate credential
+   * @public
+   * @param {AsiaBillCredential} credential
+   * @throws {Error} will throw when validate fail
+   * @return {Promise<*>}
+   */
+  async validateCredential(credential) {
+    const result = schemaCredential.validate(credential);
+    if (result.error) {
+      throw result.error;
+    }
+
+    const requestPayload = {
+      merNo: credential.merNo,
+      gatewayNo: credential.gatewayNo,
+      orderNo: '999999999999',
+    };
+
+    requestPayload.signInfo = sign(
+        [
+          credential.merNo,
+          credential.gatewayNo,
+          credential.signKey,
+        ],
+    );
+
+    const url = credential.isTestMode ?
+      process.env.ASIABILL_RETRIEVE_URL_TEST_MODE :
+      process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE;
+
+    const response = await Axios.getInstance().post(url, requestPayload);
+
+    if (response.status > 201) {
+      // Some errors occurred
+      throw new Error('Some errors occurred. detail: ' + response.statusText);
+    }
+
+    // Just status MERCHANT_GATEWAY_ACCESS_ERROR is invalid account
+    const restrictedStatus = [TRANSACTION_STATUS.MERCHANT_GATEWAY_ACCESS_ERROR];
+    const validStatus = [
+      TRANSACTION_STATUS.TO_BE_CONFIRMED,
+      TRANSACTION_STATUS.PENDING,
+      TRANSACTION_STATUS.FAILURE,
+      TRANSACTION_STATUS.SUCCESS,
+      TRANSACTION_STATUS.ORDER_DOES_NOT_EXIST,
+    ];
+    const errorStatus = [TRANSACTION_STATUS.ACCESS_IP_ERROR, TRANSACTION_STATUS.QUERY_SYSTEM_ERROR];
+
+    const tradeInfo = response.data.response.tradeinfo;
+
+    if (errorStatus.indexOf(tradeInfo.queryResult) > -1) {
+      throw new Error('Some errors occurred. detail: ' + response.statusText);
+    }
+
+    const queryResult = parseInt(tradeInfo.queryResult);
+    if (validStatus.indexOf(queryResult) > -1) {
+      return {
+        status: RESULT_VALID,
+      };
+    }
+
+    if (restrictedStatus.indexOf(queryResult) > -1) {
+      return {
+        status: RESULT_RESTRICTED,
+      };
+    }
+
+    return {
+      status: RESULT_INVALID,
     };
   }
 

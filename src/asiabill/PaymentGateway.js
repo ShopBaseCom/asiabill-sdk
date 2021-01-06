@@ -1,7 +1,18 @@
-const {schemaOrderRequest, schemaGetTransactionRequest, schemaCaptureOrVoidRequest} = require('./orderRequest');
+const {
+  schemaOrderRequest,
+  schemaGetTransactionRequest,
+  schemaCaptureRequest,
+  schemaVoidRequest,
+  schemaRefundRequest,
+} = require('./orderRequest');
 const schemaCredential = require('./credential');
 const sign = require('./signHelper');
-const {schemaOrderResponse, schemaGetTransactionResponse, schemaCaptureOrVoidResponse} = require('./orderResponse');
+const {
+  schemaOrderResponse,
+  schemaGetTransactionResponse,
+  schemaCaptureOrVoidResponse,
+  schemaRefundResponse,
+} = require('./orderResponse');
 const logger = require('../lib/logger');
 const Joi = require('joi');
 const {
@@ -11,16 +22,19 @@ const {
   RESULT_INVALID,
   RESULT_VALID,
   RESULT_RESTRICTED,
+  ERROR_PROCESSING_ERROR,
+  ERROR_CARD_DECLINED,
 } = require('../constants');
 const {TRANSACTION_STATUS, TRANSACTION_TYPES} = require('./constant');
 const {
-  ERROR_PROCESSING_ERROR, ERROR_CARD_DECLINED, MAP_ERROR,
+  MAP_ERROR,
   PAYMENT_METHOD,
   INTERFACE_INFO,
+  REFUND_TYPES,
+  MAP_REFUND_ERROR,
 } = require('./constant');
 const Axios = require('../lib/Axios');
-const {TRANSACTION_TYPE_CAPTURE} = require('../constants');
-const {TRANSACTION_TYPE_VOID} = require('../constants');
+const {REFUND_TYPE_FULL} = require('../constants');
 
 /**
  * Class representing a AsianBill gateway.
@@ -296,7 +310,7 @@ class AsiaBillPaymentGateway {
 
     const tradeInfo = getTransactionRes.tradeinfo;
 
-    const result = tradeInfo.orderStatus === TRANSACTION_STATUS.SUCCESS ? RESULT_COMPLETED : RESULT_FAILED;
+    const result = parseInt(tradeInfo.queryResult) === TRANSACTION_STATUS.SUCCESS ? RESULT_COMPLETED : RESULT_FAILED;
     return {
       timestamp: new Date().toISOString(),
       accountId: getTransactionInfoReqValid.accountId,
@@ -319,10 +333,13 @@ class AsiaBillPaymentGateway {
    * @return {Promise<orderManagementResponse>}
    */
   async capture(captureRequest, credential) {
-    return this.captureOrVoid({
-      ...captureRequest,
-      authType: TRANSACTION_TYPES.CAPTURE,
-    }, credential);
+    const captureReqValid = await schemaCaptureRequest.validateAsync(
+        captureRequest, {
+          allowUnknown: true,
+        },
+    );
+
+    return this.captureOrVoid(captureReqValid, credential, TRANSACTION_TYPES.CAPTURE);
   }
 
   /**
@@ -334,10 +351,82 @@ class AsiaBillPaymentGateway {
    * @return {Promise<orderManagementResponse>}
    */
   async void(voidRequest, credential) {
-    return this.captureOrVoid({
-      ...voidRequest,
-      authType: TRANSACTION_TYPES.VOID,
-    }, credential);
+    const voidReqValid = await schemaVoidRequest.validateAsync(
+        voidRequest, {
+          allowUnknown: true,
+        },
+    );
+
+    return this.captureOrVoid(voidReqValid, credential, TRANSACTION_TYPES.VOID);
+  }
+
+  /**
+   * refund a payment
+   * @public
+   * @throws {Joi.ValidationError} will throw when validate fail
+   * @param {refundRequest} refundRequest
+   * @param {AsiaBillCredential} credential
+   * @return {Promise<orderManagementResponse>}
+   */
+  async refund(refundRequest, credential) {
+    await schemaRefundRequest.validateAsync(refundRequest, {
+      allowUnknown: true,
+    });
+
+    const requestPayload = {
+      merNo: credential.merNo,
+      gatewayNo: credential.gatewayNo,
+      tradeNo: refundRequest.gatewayReference,
+      refundType: refundRequest.refundType === REFUND_TYPE_FULL ? REFUND_TYPES.FULL : REFUND_TYPES.PARTIAL,
+      tradeAmount: refundRequest.transactionAmount,
+      refundAmount: refundRequest.amount,
+      currency: refundRequest.currency,
+      refundReason: refundRequest.refundReason,
+      remark: refundRequest.accountId,
+    };
+
+    requestPayload.signInfo = sign(
+        [
+          credential.merNo,
+          credential.gatewayNo,
+          requestPayload.tradeNo,
+          requestPayload.currency,
+          requestPayload.refundAmount,
+          credential.signKey,
+        ],
+    );
+
+    const url = credential.isTestMode ?
+      process.env.ASIABILL_REFUND_URL_TEST_MODE :
+      process.env.ASIABILL_REFUND_URL_LIVE_MODE;
+
+    const response = await Axios.getInstance().post(url, requestPayload);
+    const refundRes = await schemaRefundResponse.validateAsync(
+        response.data,
+        {
+          allowUnknown: true,
+        },
+    );
+
+    const result = refundRes.response.applyRefund.code === '00' ?
+      RESULT_COMPLETED : RESULT_FAILED;
+
+    let errorCode;
+    let errorMessage;
+
+    if (result === RESULT_FAILED) {
+      errorCode = MAP_REFUND_ERROR[refundRes.response.applyRefund.code] || ERROR_PROCESSING_ERROR;
+      errorMessage = refundRes.response.applyRefund.description || 'something went wrong';
+    }
+    return {
+      gatewayReference: refundRes.response.applyRefund.tradeNo,
+      reference: refundRequest.reference,
+      transactionType: refundRequest.transactionType,
+      result,
+      timestamp: new Date().toISOString(),
+      errorCode,
+      errorMessage,
+    };
   }
 
 
@@ -347,21 +436,16 @@ class AsiaBillPaymentGateway {
    * @throws {Joi.ValidationError} will throw when validate fail
    * @param {captureOrVoidRequest} captureOrVoidRequest
    * @param {AsiaBillCredential} credential
+   * @param {number} authType
    * @return {Promise<orderManagementResponse>}
    */
-  async captureOrVoid(captureOrVoidRequest, credential) {
-    const captureOrVoidReqValid = await schemaCaptureOrVoidRequest.validateAsync(
-        captureOrVoidRequest, {
-          allowUnknown: true,
-        },
-    );
-
+  async captureOrVoid(captureOrVoidRequest, credential, authType) {
     const requestPayload = {
       merNo: credential.merNo,
       gatewayNo: credential.gatewayNo,
-      tradeNo: captureOrVoidReqValid.gatewayReference,
-      authType: captureOrVoidReqValid.authType,
-      remark: captureOrVoidReqValid.accountId,
+      tradeNo: captureOrVoidRequest.gatewayReference,
+      authType: authType,
+      remark: captureOrVoidRequest.accountId,
     };
 
     requestPayload.signInfo = sign(
@@ -401,9 +485,8 @@ class AsiaBillPaymentGateway {
     }
     return {
       gatewayReference: captureOrVoidRes.respon.tradeNo,
-      reference: captureOrVoidReqValid.reference,
-      transactionType: captureOrVoidReqValid.authType === TRANSACTION_TYPES.CAPTURE ?
-        TRANSACTION_TYPE_CAPTURE : TRANSACTION_TYPE_VOID,
+      reference: captureOrVoidRequest.reference,
+      transactionType: captureOrVoidRequest.transactionType,
       result,
       timestamp: new Date().toISOString(),
       errorCode,

@@ -135,7 +135,36 @@ const MAP_ERROR = {
   A0007: ERROR_PROCESSING_ERROR, // This order is not a pre-authorized transaction
   A0008: ERROR_PROCESSING_ERROR, // This order cannot initiate an authorization operation
   A0009: ERROR_PROCESSING_ERROR, // Exceeded the authorization completion time limit
-  A0010: ERROR_PROCESSING_ERROR, // Remarks cannot exceed 100 characters
+  A0010: ERROR_PROCESSING_ERROR, // Remarks cannot exceed 100 characters,
+};
+
+const MAP_REFUND_ERROR = {
+  '01': ERROR_CALLER_ISSUER, // Incorrect parameter transmission
+  '03': ERROR_CALLER_ISSUER, // Incorrect registered IP address
+  '04': ERROR_CALLER_ISSUER, // Insufficient parameter transmission
+  '05': ERROR_ACCOUNT_INVALID, // Invalid Merchant ID
+  '06': ERROR_ACCOUNT_INVALID, // Invalid Gateway ID
+  '08': ERROR_CALLER_ISSUER, // Incorrect format of Ref No.
+  '09': ERROR_CALLER_ISSUER, // Refunded amount over original amount
+  '10': ERROR_CALLER_ISSUER, // Incorrect refund Type
+  '12': ERROR_CALLER_ISSUER, // Incorrect SHA256
+  '13': ERROR_PROCESSING_ERROR, // Failed transaction,can not apply for refund
+  '14': ERROR_PROCESSING_ERROR, // Transaction suspended,can not apply for refund
+  '15': ERROR_CALLER_ISSUER, // Incorrect transaction amount
+  '16': ERROR_CALLER_ISSUER, // Incorrect currency
+  '17': ERROR_PROCESSING_ERROR, // Rolling reserve is being settled, can not apply for refund
+  '18': ERROR_CALLER_ISSUER, // Incorrect refund amount format
+  '19': ERROR_CALLER_ISSUER, // Incorrect refund amount and type
+  '20': ERROR_PROCESSING_ERROR, // Partial refund is not supported
+  '21': ERROR_PROCESSING_ERROR, // Transaction is being settled, can not apply for refund
+  '22': ERROR_CALLER_ISSUER, // Incorrect transaction amount format
+  '23': ERROR_CALLER_ISSUER, // Refund reason over length
+  '24': ERROR_PROCESSING_ERROR, // Pending for transaction reconciliation
+  '25': ERROR_CALLER_ISSUER, // Refunded amount over refundable amount
+  '26': ERROR_CALLER_ISSUER, // MerTrackNo over length
+  '27': ERROR_PROCESSING_ERROR, // Over 180 days,can not be refunded
+  '98': ERROR_PROCESSING_ERROR, // No transaction record on file
+  '99': ERROR_PROCESSING_ERROR, // System error
 };
 
 const TRANSACTION_STATUS = {
@@ -158,4 +187,9 @@ const TRANSACTION_TYPES = {
   VOID: 2,
 };
 
-module.exports = {PAYMENT_METHOD, INTERFACE_INFO, MAP_ERROR, TRANSACTION_STATUS, TRANSACTION_TYPES};
+const REFUND_TYPES = {
+  FULL: 1,
+  PARTIAL: 2,
+};
+
+module.exports = {PAYMENT_METHOD, INTERFACE_INFO, MAP_ERROR, TRANSACTION_STATUS, TRANSACTION_TYPES, REFUND_TYPES, MAP_REFUND_ERROR};

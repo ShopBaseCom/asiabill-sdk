@@ -6,9 +6,9 @@ const PaymentGateway = require('../asiabill/PaymentGateway');
 const {parseVoidRequest} = require('../parser/void');
 const redis = require('../lib/redis');
 const CredentialManager = require('../lib/CredentialManager');
-const ShopBaseSigner = require('../lib/Signer');
 const {handleError} = require('../lib/ResponseHelper');
 const {parseOrderManagementResponse} = require('../parser/response');
+const {responseWithSign} = require('../lib/ResponseHelper');
 
 const creManager = new CredentialManager(redis);
 const paymentGateway = new PaymentGateway();
@@ -25,7 +25,7 @@ async function voidHandler(req, res) {
 
     const response = await paymentGateway.void(voidReq, credential);
 
-    return res.status(StatusCodes.OK).json(ShopBaseSigner.sign(parseOrderManagementResponse(response)));
+    return responseWithSign(res, StatusCodes.OK, parseOrderManagementResponse(response));
   } catch (e) {
     handleError(res, e);
   }

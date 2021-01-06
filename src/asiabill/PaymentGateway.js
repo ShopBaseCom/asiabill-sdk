@@ -15,7 +15,16 @@ const {
 } = require('./orderResponse');
 const logger = require('../lib/logger');
 const Joi = require('joi');
-const {TRANSACTION_TYPE_AUTHORIZATION, RESULT_COMPLETED, RESULT_FAILED, ERROR_PROCESSING_ERROR, ERROR_CARD_DECLINED} = require('../constants');
+const {
+  TRANSACTION_TYPE_AUTHORIZATION,
+  RESULT_COMPLETED,
+  RESULT_FAILED,
+  RESULT_INVALID,
+  RESULT_VALID,
+  RESULT_RESTRICTED,
+  ERROR_PROCESSING_ERROR,
+  ERROR_CARD_DECLINED,
+} = require('../constants');
 const {TRANSACTION_STATUS, TRANSACTION_TYPES} = require('./constant');
 const {
   MAP_ERROR,
@@ -207,7 +216,7 @@ class AsiaBillPaymentGateway {
       gatewayReference: orderResValid['tradeNo'],
       isPostPurchase: this.isPostPurchase(orderResValid),
       isSuccess: orderResValid['orderStatus'] === TRANSACTION_STATUS.SUCCESS,
-      isTest: credential.isTestMode,
+      isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
       isCancel: false,
       transactionType: TRANSACTION_TYPE_AUTHORIZATION,
@@ -273,7 +282,7 @@ class AsiaBillPaymentGateway {
     );
     const orderNo = getTransactionInfoReqValid.reference;
 
-    const url = credential.isTestMode ?
+    const url = credential.sandbox ?
       process.env.ASIABILL_RETRIEVE_URL_TEST_MODE :
       process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE;
 
@@ -306,7 +315,7 @@ class AsiaBillPaymentGateway {
       accountId: getTransactionInfoReqValid.accountId,
       reference: this.getRefFromResponseGateway(tradeInfo),
       currency: tradeInfo.tradeCurrency,
-      isTest: credential.isTestMode,
+      isTest: credential.sandbox,
       amount: tradeInfo.tradeAmount,
       gatewayReference: tradeInfo.tradeNo,
       result,
@@ -448,7 +457,7 @@ class AsiaBillPaymentGateway {
         ],
     );
 
-    const url = credential.isTestMode ?
+    const url = credential.sandbox ?
       process.env.ASIABILL_CAPTURE_VOID_URL_TEST_MODE :
       process.env.ASIABILL_CAPTURE_VOID_URL_LIVE_MODE;
 
@@ -485,6 +494,79 @@ class AsiaBillPaymentGateway {
   }
 
   /**
+   * validate credential
+   * @public
+   * @param {AsiaBillCredential} credential
+   * @throws {Error} will throw when validate fail
+   * @return {Promise<*>}
+   */
+  async validateCredential(credential) {
+    const result = schemaCredential.validate(credential);
+    if (result.error) {
+      throw result.error;
+    }
+
+    const requestPayload = {
+      merNo: credential.merNo,
+      gatewayNo: credential.gatewayNo,
+      orderNo: '999999999999',
+    };
+
+    requestPayload.signInfo = sign(
+        [
+          credential.merNo,
+          credential.gatewayNo,
+          credential.signKey,
+        ],
+    );
+
+    const url = credential.isTestMode ?
+      process.env.ASIABILL_RETRIEVE_URL_TEST_MODE :
+      process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE;
+
+    const response = await Axios.getInstance().post(url, requestPayload);
+
+    if (response.status > 201) {
+      // Some errors occurred
+      throw new Error('Some errors occurred. detail: ' + response.statusText);
+    }
+
+    // Just status MERCHANT_GATEWAY_ACCESS_ERROR is invalid account
+    const restrictedStatus = [TRANSACTION_STATUS.MERCHANT_GATEWAY_ACCESS_ERROR];
+    const validStatus = [
+      TRANSACTION_STATUS.TO_BE_CONFIRMED,
+      TRANSACTION_STATUS.PENDING,
+      TRANSACTION_STATUS.FAILURE,
+      TRANSACTION_STATUS.SUCCESS,
+      TRANSACTION_STATUS.ORDER_DOES_NOT_EXIST,
+    ];
+    const errorStatus = [TRANSACTION_STATUS.ACCESS_IP_ERROR, TRANSACTION_STATUS.QUERY_SYSTEM_ERROR];
+
+    const tradeInfo = response.data.response.tradeinfo;
+
+    if (errorStatus.indexOf(tradeInfo.queryResult) > -1) {
+      throw new Error('Some errors occurred. detail: ' + response.statusText);
+    }
+
+    const queryResult = parseInt(tradeInfo.queryResult);
+    if (validStatus.indexOf(queryResult) > -1) {
+      return {
+        status: RESULT_VALID,
+      };
+    }
+
+    if (restrictedStatus.indexOf(queryResult) > -1) {
+      return {
+        status: RESULT_RESTRICTED,
+      };
+    }
+
+    return {
+      status: RESULT_INVALID,
+    };
+  }
+
+  /**
    * @private
    * @return {string}
    */
@@ -498,7 +580,7 @@ class AsiaBillPaymentGateway {
    * @return {string}
    */
   getUrlApi(credential) {
-    if (credential.isTestMode) {
+    if (credential.sandbox) {
       return process.env.ASIABILL_URL_TEST_MODE;
     }
 

@@ -14,6 +14,9 @@ const {
 const {
   RESULT_COMPLETED,
   RESULT_FAILED,
+  RESULT_VALID,
+  RESULT_INVALID,
+  RESULT_RESTRICTED,
 } = require('./result');
 
 
@@ -41,6 +44,9 @@ module.exports = {
 
   RESULT_COMPLETED,
   RESULT_FAILED,
+  RESULT_VALID,
+  RESULT_INVALID,
+  RESULT_RESTRICTED,
 
   StatusCodes,
 

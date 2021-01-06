@@ -46,6 +46,7 @@ class CredentialManager {
       }
 
       await this.storage.set(key, JSON.stringify(response.data.x_gateway_credentials));
+      this.storage.expire(key, 60 * 60 * 24);
       return response.data.x_gateway_credentials;
     } catch (e) {
       if (!e.response || !e.response.data) {
@@ -73,7 +74,7 @@ class CredentialManager {
    * @return {string}
    */
   getCacheKeyById(id) {
-    return `${process.env.CACHE_KEY_URL}/${id}`;
+    return `${process.env.CACHE_KEY_CREDENTIAL}/${id}`;
   }
 }
 

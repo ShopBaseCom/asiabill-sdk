@@ -7,20 +7,16 @@ const captureHandler = require('./src/handler/captureHandler');
 const voidHandler = require('./src/handler/voidHandler');
 const refundHandler = require('./src/handler/refundHandler');
 
+const gatewayCheckCredentialsHandler = require('./src/handler/gatewayCheckCredentialsHandler');
 const router = new express.Router();
-
-const redis = require('./src/lib/redis');
 
 router.post('/create-order', createOrderHandler);
 
 router.get('/provider-webhook', gatewayWebhookHandler);
 
 router.post('/provider-confirm', gatewayConfirmHandler);
-router.get('/test', async (req, res) => {
-  const redirectOrder = await redis.get('test');
-  console.log(redirectOrder);
-  return res.render('redirect', JSON.parse(redirectOrder));
-});
+
+router.post('/provider-check-credentials', gatewayCheckCredentialsHandler);
 
 router.get('/transaction', getTransactionInfoHandler);
 

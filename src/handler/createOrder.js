@@ -33,6 +33,8 @@ async function createOrderHandler(req, res) {
     orderReq.urlObject = await urlManager.getProxyUrlObject(
         orderReq.reference, !!orderReq.isPostPurchase, orderReq.urlObject,
     );
+    logger.info('url object', orderReq.urlObject);
+    logger.info(process.env.HOST);
     const paymentGateway = new PaymentGateway();
     const createOrder = await paymentGateway.getDataCreateOrder(orderReq,
         credential);

@@ -26,6 +26,8 @@ class UrlManager {
     await this.redis.set(this.getCacheKeyByOrderNo(ref, isPortPurchase),
         JSON.stringify(url));
 
+    this.redis.expire(this.getCacheKeyByOrderNo(ref, isPortPurchase), 60 * 60 * 24 * 30);
+
     return {
       // url define in file router.js
       returnUrl: `${process.env.HOST}/provider-confirm`,

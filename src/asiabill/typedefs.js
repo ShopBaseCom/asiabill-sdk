@@ -2,7 +2,7 @@
  * config credential
  @typedef AsiaBillCredential
  @type {Object}
- @property {boolean} isTestMode
+ @property {boolean} sandbox
  @property {string} merNo
  @property {string} gatewayNo
  @property {string} signKey

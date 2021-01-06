@@ -173,24 +173,25 @@ class AsiaBillPaymentGateway {
       errorMessage = result.errorMessage;
     }
     const signInfo = sign([
-      orderResValid['orderNo'],
-      orderResValid['orderAmount'],
-      orderResValid['orderCurrency'],
+      credential.merNo,
+      credential.gatewayNo,
+      orderResValid.tradeNo,
+      orderResValid.orderNo,
+      orderResValid.orderCurrency,
+      orderResValid.orderAmount,
+      orderResValid.orderStatus,
+      orderResValid.orderInfo,
+      credential.signKey,
     ]);
 
-    // Todo check Signing mechanism
     if (signInfo !== orderResValid['signInfo']) {
+      logger.warn('sign invalid');
       // throw new SignInvalidError('sign invalid');
     }
 
     if (orderResValid['orderStatus'] === TRANSACTION_STATUS.TO_BE_CONFIRMED) {
       // in case merchant should confirm and order will handle over webhook
       logger.info('order status is confirmed', orderResValid);
-    }
-
-    if (orderResValid['orderStatus'] === TRANSACTION_STATUS.PENDING) {
-      // in order will handle over webhook
-      logger.info('order status is pending', orderResValid);
     }
 
     return {
@@ -201,7 +202,7 @@ class AsiaBillPaymentGateway {
       amount: orderResValid['orderAmount'],
       gatewayReference: orderResValid['tradeNo'],
       isPostPurchase: this.isPostPurchase(orderResValid),
-      isSuccess: orderResValid['orderStatus'] === TRANSACTION_STATUS.SUCCESS,
+      isSuccess: orderResValid['orderStatus'] === TRANSACTION_STATUS.PENDING,
       isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
       isCancel: false,

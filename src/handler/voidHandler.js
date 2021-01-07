@@ -20,7 +20,7 @@ const paymentGateway = new PaymentGateway();
  */
 async function voidHandler(req, res) {
   try {
-    const voidReq = await parseVoidRequest(req.body);
+    const voidReq = await parseVoidRequest(req);
     const credential = await creManager.getById(voidReq.accountId);
 
     const response = await paymentGateway.void(voidReq, credential);

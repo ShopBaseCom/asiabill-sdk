@@ -19,7 +19,7 @@ const paymentGateway = new PaymentGateway();
  */
 async function refundHandler(req, res) {
   try {
-    const refundReq = await parseRefundRequest(req.body);
+    const refundReq = await parseRefundRequest(req);
     const credential = await creManager.getById(refundReq.accountId);
 
     const response = await paymentGateway.refund(refundReq, credential);

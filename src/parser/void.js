@@ -4,9 +4,14 @@ const SignInvalidError = require('../errors/SignInvalid');
 
 const schemaVoidPaymentRequest = Joi.object({
   x_account_id: Joi.string().required(),
+  x_amount: Joi.number().required(),
+  x_currency: Joi.string().max(3).required(),
   x_reference: Joi.string().required(),
+  x_test: Joi.bool().required(),
   x_gateway_reference: Joi.string().required(),
-  x_signature: Joi.string().required(),
+  x_transaction_type: Joi.string().required(),
+  x_invoice: Joi.string(),
+  x_url_callback: Joi.string().required(),
 });
 
 /**
@@ -19,7 +24,7 @@ async function parseVoidRequest(request) {
     allowUnknown: true,
   });
 
-  if (!ShopBaseSigner.verify(request, value['x_signature'])) {
+  if (!ShopBaseSigner.verify(request, request.header('X-Signature'))) {
     throw new SignInvalidError('signature invalid');
   }
 

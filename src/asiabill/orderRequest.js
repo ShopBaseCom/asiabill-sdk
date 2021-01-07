@@ -48,9 +48,6 @@ const schemaRefundRequest = Joi.object().keys({
   reference: Joi.string().required(),
   // tradeNo
   gatewayReference: Joi.string().required(),
-  refundType: Joi.number().required().allow(REFUND_TYPE_FULL, REFUND_TYPE_PARTIAL),
-  // tradeAmount
-  transactionAmount: Joi.number().required(),
   // refundAmount
   amount: Joi.number().required(),
   currency: Joi.string().max(3).required(),

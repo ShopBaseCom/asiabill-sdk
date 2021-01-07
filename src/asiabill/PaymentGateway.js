@@ -378,12 +378,18 @@ class AsiaBillPaymentGateway {
       allowUnknown: true,
     });
 
+    const getTransactionResponse = await this.getTransaction({
+      transactionType: refundRequest.transactionType,
+      reference: refundRequest.reference,
+      accountId: refundRequest.accountId,
+    }, credential);
+
     const requestPayload = {
       merNo: credential.merNo,
       gatewayNo: credential.gatewayNo,
       tradeNo: refundRequest.gatewayReference,
-      refundType: refundRequest.refundType === REFUND_TYPE_FULL ? REFUND_TYPES.FULL : REFUND_TYPES.PARTIAL,
-      tradeAmount: refundRequest.transactionAmount,
+      refundType: getTransactionResponse.amount === refundRequest.amount ? REFUND_TYPES.FULL : REFUND_TYPES.PARTIAL,
+      tradeAmount: getTransactionResponse.amount,
       refundAmount: refundRequest.amount,
       currency: refundRequest.currency,
       refundReason: refundRequest.refundReason,

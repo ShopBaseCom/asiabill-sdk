@@ -16,15 +16,15 @@ const schemaCapturePaymentRequest = Joi.object({
 
 /**
  * @throws {Joi.ValidationError} will throw when validate fail
- * @param {Object} request Object get from request body sent from ShopBase
+ * @param {Express.request} request Object get from request body sent from ShopBase
  * @return {Promise<captureRequest>}
  */
 async function parseCaptureRequest(request) {
-  const value = await schemaCapturePaymentRequest.validateAsync(request, {
+  const value = await schemaCapturePaymentRequest.validateAsync(request.body, {
     allowUnknown: true,
   });
 
-  if (!ShopBaseSigner.verify(request, request.header('X-Signature'))) {
+  if (!ShopBaseSigner.verify(request.body, request.header('X-Signature'))) {
     throw new SignInvalidError('signature invalid');
   }
 

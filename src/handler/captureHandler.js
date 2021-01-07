@@ -19,7 +19,7 @@ const paymentGateway = new PaymentGateway();
  */
 async function captureHandler(req, res) {
   try {
-    const captureReq = await parseCaptureRequest(req.body);
+    const captureReq = await parseCaptureRequest(req);
     const credential = await creManager.getById(captureReq.accountId);
 
     const response = await paymentGateway.capture(captureReq, credential);

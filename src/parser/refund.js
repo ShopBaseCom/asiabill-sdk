@@ -13,6 +13,7 @@ const schemaRefundPaymentRequest = Joi.object({
   x_invoice: Joi.string(),
   x_url_callback: Joi.string().required(),
   x_refund_reason: Joi.string().required(),
+  x_post_purchase: Joi.bool(),
 });
 
 /**
@@ -37,6 +38,7 @@ async function parseRefundRequest(request) {
     amount: value['x_amount'],
     currency: value['x_currency'],
     refundReason: value['x_refund_reason'],
+    isPostPurchase: value['x_post_purchase'],
   };
 }
 

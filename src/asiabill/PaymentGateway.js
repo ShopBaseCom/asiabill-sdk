@@ -34,7 +34,6 @@ const {
   MAP_REFUND_ERROR,
 } = require('./constant');
 const Axios = require('../lib/Axios');
-const {REFUND_TYPE_FULL} = require('../constants');
 
 /**
  * Class representing a AsianBill gateway.
@@ -378,9 +377,14 @@ class AsiaBillPaymentGateway {
       allowUnknown: true,
     });
 
+    let orderNo = refundRequest.reference;
+    if (refundRequest.isPostPurchase) {
+      orderNo += this.suffixPostPurchase;
+    }
+
     const getTransactionResponse = await this.getTransaction({
       transactionType: refundRequest.transactionType,
-      reference: refundRequest.reference,
+      reference: orderNo,
       accountId: refundRequest.accountId,
     }, credential);
 

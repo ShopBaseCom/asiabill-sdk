@@ -8,4 +8,5 @@
  @property {number} amount
  @property {string} currency
  @property {string} refundReason
+ @property {boolean} isPostPurchase
  */

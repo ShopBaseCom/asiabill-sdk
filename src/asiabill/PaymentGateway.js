@@ -407,7 +407,7 @@ class AsiaBillPaymentGateway {
         ],
     );
 
-    const url = credential.isTestMode ?
+    const url = credential.sandbox ?
       process.env.ASIABILL_REFUND_URL_TEST_MODE :
       process.env.ASIABILL_REFUND_URL_LIVE_MODE;
 

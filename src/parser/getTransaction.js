@@ -29,6 +29,7 @@ async function parseGetTransactionRequest(request) {
     accountId: value['x_account_id'],
     reference: value['x_reference'],
     transactionType: value['x_transaction_type'],
+    gatewayReference: value['x_gateway_reference'],
   };
 }
 

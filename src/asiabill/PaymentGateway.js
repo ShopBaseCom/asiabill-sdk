@@ -279,7 +279,6 @@ class AsiaBillPaymentGateway {
    * @return {Promise<orderResponse>}
    */
   async getTransaction(getTransactionRequest, credential) {
-    logger.info('debug', getTransactionRequest);
     const getTransactionInfoReqValid = await schemaGetTransactionRequest.validateAsync(
         getTransactionRequest, {
           allowUnknown: true,

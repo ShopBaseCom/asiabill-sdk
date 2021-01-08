@@ -184,6 +184,10 @@ class AsiaBillPaymentGateway {
           orderResValid.orderInfo,
       );
 
+      if (result.errorCode === ERROR_PROCESSING_ERROR) {
+        logger.info('debug error', orderResValid);
+      }
+
       errorCode = result.errorCode;
       errorMessage = result.errorMessage;
     }

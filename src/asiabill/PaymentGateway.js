@@ -34,7 +34,6 @@ const {
   MAP_REFUND_ERROR,
 } = require('./constant');
 const Axios = require('../lib/Axios');
-const {REFUND_TYPE_FULL} = require('../constants');
 
 const redis = require('../lib/redis');
 
@@ -280,6 +279,7 @@ class AsiaBillPaymentGateway {
    * @return {Promise<orderResponse>}
    */
   async getTransaction(getTransactionRequest, credential) {
+    logger.info('debug', getTransactionRequest);
     const getTransactionInfoReqValid = await schemaGetTransactionRequest.validateAsync(
         getTransactionRequest, {
           allowUnknown: true,

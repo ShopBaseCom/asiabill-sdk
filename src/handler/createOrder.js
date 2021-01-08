@@ -3,7 +3,6 @@ const {
   ERROR_MISSING_PARAMS,
   ERROR_PROCESSING_ERROR,
   RESULT_FAILED,
-  StatusCodes,
 } = require('../constants');
 
 // should using factory return interface
@@ -16,6 +15,7 @@ const SignInvalidError = require('../errors/SignInvalid');
 const logger = require('../lib/logger');
 const InvalidAccountError = require('../errors/InvalidAccountError');
 const ShopBaseSystemError = require('../errors/ShopBaseSystemError');
+const {redirectWithSignRequestToShopBase} = require('../lib/ResponseHelper');
 const {ERROR_INVALID_SIGNATURE} = require('../constants');
 
 const creManager = new CredentialManager(redis);
@@ -42,7 +42,12 @@ async function createOrderHandler(req, res) {
     return res.render('redirect', createOrder);
   } catch (e) {
     if (e instanceof Joi.ValidationError) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
+      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
+        x_result: RESULT_FAILED,
+        x_message: e.message,
+        x_error_code: ERROR_MISSING_PARAMS,
+      });
+      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'],{
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_MISSING_PARAMS,
@@ -50,7 +55,7 @@ async function createOrderHandler(req, res) {
     }
 
     if (e instanceof SignInvalidError) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
+      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'],{
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_INVALID_SIGNATURE,
@@ -58,7 +63,7 @@ async function createOrderHandler(req, res) {
     }
 
     if (e instanceof InvalidAccountError) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
+      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'],{
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_MISSING_PARAMS,
@@ -66,7 +71,7 @@ async function createOrderHandler(req, res) {
     }
 
     if (e instanceof ShopBaseSystemError) {
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_PROCESSING_ERROR,
@@ -76,7 +81,7 @@ async function createOrderHandler(req, res) {
     // system or unexpected error need call alert
     logger.error(e);
 
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+    return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
       x_result: RESULT_FAILED,
       x_message: e.message,
       x_error_code: ERROR_PROCESSING_ERROR,

@@ -1,3 +1,5 @@
+const {RESULT_COMPLETED, RESULT_FAILED} = require('../constants');
+
 /**
  *
  * @param {orderResponse} res
@@ -15,7 +17,7 @@ function parseOrderResponse(res) {
     x_timestamp: res.timestamp,
     x_message: res.errorMessage,
     x_error_code: res.errorCode,
-    x_result: res.result,
+    x_result: res.isSuccess ? RESULT_COMPLETED : RESULT_FAILED,
   };
 }
 

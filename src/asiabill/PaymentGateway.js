@@ -36,6 +36,8 @@ const {
 const Axios = require('../lib/Axios');
 const {REFUND_TYPE_FULL} = require('../constants');
 
+const redis = require('../lib/redis');
+
 /**
  * Class representing a AsianBill gateway.
  *
@@ -178,9 +180,9 @@ class AsiaBillPaymentGateway {
     let errorCode;
     let errorMessage;
 
-    if (orderResValid['orderStatus'] === TRANSACTION_STATUS.FAILURE) {
+    if (orderResValid.orderStatus === TRANSACTION_STATUS.FAILURE) {
       const result = this.getErrorCodeAndMessage(
-          orderResValid['orderInfo'],
+          orderResValid.orderInfo,
       );
 
       errorCode = result.errorCode;
@@ -198,25 +200,27 @@ class AsiaBillPaymentGateway {
       credential.signKey,
     ]);
 
-    if (signInfo !== orderResValid['signInfo']) {
+    if (signInfo !== orderResValid.signInfo) {
       logger.warn('sign invalid');
       // throw new SignInvalidError('sign invalid');
     }
 
-    if (orderResValid['orderStatus'] === TRANSACTION_STATUS.TO_BE_CONFIRMED) {
+    if (orderResValid.orderStatus === TRANSACTION_STATUS.TO_BE_CONFIRMED) {
       // in case merchant should confirm and order will handle over webhook
       logger.info('order status is confirmed', orderResValid);
     }
+
+    await redis.set(this.getCacheKeyTranNo(orderResValid.tradeNo), orderResValid.orderNo);
 
     return {
       errorCode, errorMessage,
       accountId: this.getAccountIdFromResponseGateway(orderResValid),
       reference: this.getRefFromResponseGateway(orderResValid),
-      currency: orderResValid['orderCurrency'],
-      amount: orderResValid['orderAmount'],
-      gatewayReference: orderResValid['tradeNo'],
+      currency: orderResValid.orderCurrency,
+      amount: orderResValid.orderAmount,
+      gatewayReference: orderResValid.tradeNo,
       isPostPurchase: this.isPostPurchase(orderResValid),
-      isSuccess: orderResValid['orderStatus'] === TRANSACTION_STATUS.PENDING,
+      isSuccess: orderResValid.orderStatus === TRANSACTION_STATUS.PENDING,
       isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
       isCancel: false,
@@ -281,11 +285,12 @@ class AsiaBillPaymentGateway {
           allowUnknown: true,
         },
     );
-    const orderNo = getTransactionInfoReqValid.reference;
 
     const url = credential.sandbox ?
       process.env.ASIABILL_RETRIEVE_URL_TEST_MODE :
       process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE;
+
+    const orderNo = await redis.get(this.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference));
 
     const requestPayload = {
       merNo: credential.merNo,
@@ -310,8 +315,6 @@ class AsiaBillPaymentGateway {
 
     const tradeInfo = getTransactionRes.tradeinfo;
 
-    const result = parseInt(tradeInfo.queryResult) === TRANSACTION_STATUS.SUCCESS ? RESULT_COMPLETED : RESULT_FAILED;
-
     let amount = parseFloat(tradeInfo.tradeAmount);
     if (isNaN(amount) || amount < 0) {
       amount = 0;
@@ -324,7 +327,7 @@ class AsiaBillPaymentGateway {
       isTest: credential.sandbox,
       amount,
       gatewayReference: tradeInfo.tradeNo,
-      result,
+      isSuccess: parseInt(tradeInfo.queryResult) === TRANSACTION_STATUS.SUCCESS,
       transactionType: getTransactionInfoReqValid.transactionType,
     };
   }
@@ -344,7 +347,8 @@ class AsiaBillPaymentGateway {
         },
     );
 
-    return this.captureOrVoid(captureReqValid, credential, TRANSACTION_TYPES.CAPTURE);
+    return this.captureOrVoid(captureReqValid, credential,
+        TRANSACTION_TYPES.CAPTURE);
   }
 
   /**
@@ -388,7 +392,9 @@ class AsiaBillPaymentGateway {
       merNo: credential.merNo,
       gatewayNo: credential.gatewayNo,
       tradeNo: refundRequest.gatewayReference,
-      refundType: getTransactionResponse.amount === refundRequest.amount ? REFUND_TYPES.FULL : REFUND_TYPES.PARTIAL,
+      refundType: getTransactionResponse.amount === refundRequest.amount ?
+        REFUND_TYPES.FULL :
+        REFUND_TYPES.PARTIAL,
       tradeAmount: getTransactionResponse.amount,
       refundAmount: refundRequest.amount,
       currency: refundRequest.currency,
@@ -426,8 +432,10 @@ class AsiaBillPaymentGateway {
     let errorMessage;
 
     if (result === RESULT_FAILED) {
-      errorCode = MAP_REFUND_ERROR[refundRes.response.applyRefund.code] || ERROR_PROCESSING_ERROR;
-      errorMessage = refundRes.response.applyRefund.description || 'something went wrong';
+      errorCode = MAP_REFUND_ERROR[refundRes.response.applyRefund.code] ||
+        ERROR_PROCESSING_ERROR;
+      errorMessage = refundRes.response.applyRefund.description ||
+        'something went wrong';
     }
     return {
       gatewayReference: refundRes.response.applyRefund.tradeNo,
@@ -439,7 +447,6 @@ class AsiaBillPaymentGateway {
       errorMessage,
     };
   }
-
 
   /**
    * capture or void a payment
@@ -481,7 +488,8 @@ class AsiaBillPaymentGateway {
         },
     );
 
-    const result = parseInt(captureOrVoidRes.respon.orderStatus) === TRANSACTION_STATUS.SUCCESS ?
+    const result = parseInt(captureOrVoidRes.respon.orderStatus) ===
+    TRANSACTION_STATUS.SUCCESS ?
       RESULT_COMPLETED : RESULT_FAILED;
 
     let errorCode;
@@ -552,7 +560,9 @@ class AsiaBillPaymentGateway {
       TRANSACTION_STATUS.SUCCESS,
       TRANSACTION_STATUS.ORDER_DOES_NOT_EXIST,
     ];
-    const errorStatus = [TRANSACTION_STATUS.ACCESS_IP_ERROR, TRANSACTION_STATUS.QUERY_SYSTEM_ERROR];
+    const errorStatus = [
+      TRANSACTION_STATUS.ACCESS_IP_ERROR,
+      TRANSACTION_STATUS.QUERY_SYSTEM_ERROR];
 
     const tradeInfo = response.data.response.tradeinfo;
 
@@ -584,6 +594,15 @@ class AsiaBillPaymentGateway {
    */
   get suffixPostPurchase() {
     return '_1';
+  }
+
+  /**
+   * @private
+   * @param {string} ref
+   * @return {string}
+   */
+  getCacheKeyTranNo(ref) {
+    return `${process.env.ASIABILL_CACHE_KEY_TRANO}/${ref}`;
   }
 
   /**

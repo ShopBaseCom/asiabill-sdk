@@ -15,6 +15,7 @@ const SignInvalidError = require('../errors/SignInvalid');
 const logger = require('../lib/logger');
 const InvalidAccountError = require('../errors/InvalidAccountError');
 const ShopBaseSystemError = require('../errors/ShopBaseSystemError');
+const StatusCodes = require('../constants/statusCodes');
 const {redirectWithSignRequestToShopBase} = require('../lib/ResponseHelper');
 const {ERROR_INVALID_SIGNATURE} = require('../constants');
 
@@ -41,13 +42,20 @@ async function createOrderHandler(req, res) {
     redis.set('test', JSON.stringify(createOrder));
     return res.render('redirect', createOrder);
   } catch (e) {
+    if (!res.body['x_url_complete']) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        x_result: RESULT_FAILED,
+        x_message: 'x_url_complete not found',
+        x_error_code: ERROR_MISSING_PARAMS,
+      });
+    }
     if (e instanceof Joi.ValidationError) {
       return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_MISSING_PARAMS,
       });
-      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'],{
+      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_MISSING_PARAMS,
@@ -55,7 +63,7 @@ async function createOrderHandler(req, res) {
     }
 
     if (e instanceof SignInvalidError) {
-      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'],{
+      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_INVALID_SIGNATURE,
@@ -63,7 +71,7 @@ async function createOrderHandler(req, res) {
     }
 
     if (e instanceof InvalidAccountError) {
-      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'],{
+      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_MISSING_PARAMS,

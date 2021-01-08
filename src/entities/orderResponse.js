@@ -16,7 +16,6 @@
  @property {boolean} isSuccess
  @property {boolean} isCancel
  @property {string} transactionType
- @property {string} result
  */
 
 

@@ -21,10 +21,9 @@ const schemaOrderRequest = Joi.object().keys({
   billingAddress: schemaAddress.required(),
 });
 
-
 const schemaGetTransactionRequest = Joi.object().keys({
   accountId: Joi.string().required(),
-  reference: Joi.string().required(),
+  gatewayReference: Joi.string().required(),
   transactionType: Joi.string().required(),
 });
 
@@ -48,13 +47,16 @@ const schemaRefundRequest = Joi.object().keys({
   reference: Joi.string().required(),
   // tradeNo
   gatewayReference: Joi.string().required(),
-  refundType: Joi.number().required().allow(REFUND_TYPE_FULL, REFUND_TYPE_PARTIAL),
-  // tradeAmount
-  transactionAmount: Joi.number().required(),
   // refundAmount
   amount: Joi.number().required(),
   currency: Joi.string().max(3).required(),
   refundReason: Joi.string().required(),
 });
 
-module.exports = {schemaOrderRequest, schemaGetTransactionRequest, schemaCaptureRequest, schemaVoidRequest, schemaRefundRequest};
+module.exports = {
+  schemaOrderRequest,
+  schemaGetTransactionRequest,
+  schemaCaptureRequest,
+  schemaVoidRequest,
+  schemaRefundRequest,
+};

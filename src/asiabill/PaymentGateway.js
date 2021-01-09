@@ -215,8 +215,7 @@ class AsiaBillPaymentGateway {
 
     await redis.set(this.getCacheKeyTranNo(orderResValid.tradeNo), orderResValid.orderNo);
 
-
-    logger.info('set ref', this.getCacheKeyTranNo(orderResValid.tradeNo), orderResValid.orderNo);
+    logger.info(`set ref ${this.getCacheKeyTranNo(orderResValid.tradeNo)} ${orderResValid.orderNo}`);
 
     return {
       errorCode, errorMessage,
@@ -298,7 +297,7 @@ class AsiaBillPaymentGateway {
 
     const orderNo = await redis.get(this.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference));
 
-    logger.info('ref', this.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference), orderNo);
+    logger.info(`ref ${this.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference)} ${orderNo}`);
 
     const requestPayload = {
       merNo: credential.merNo,

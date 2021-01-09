@@ -42,7 +42,8 @@ async function createOrderHandler(req, res) {
     redis.set('test', JSON.stringify(createOrder));
     return res.render('redirect', createOrder);
   } catch (e) {
-    if (!res.body['x_url_complete']) {
+    if (!res.body || !res.body['x_url_complete']) {
+      logger.error(e);
       return res.status(StatusCodes.BAD_REQUEST).json({
         x_result: RESULT_FAILED,
         x_message: 'x_url_complete not found',

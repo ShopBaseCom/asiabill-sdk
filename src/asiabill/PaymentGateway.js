@@ -444,7 +444,7 @@ class AsiaBillPaymentGateway {
       logger.info(`Refund success,
       batchNo: ${refundRes.response.applyRefund.batchNo},
       tradeNo: ${refundRes.response.applyRefund.tradeNo},
-      refunReason: ${refundRes.response.applyRefund.tradeNo}.`
+      refundReason: ${refundRes.response.applyRefund.refundReason}.`
       );
     }
     return {

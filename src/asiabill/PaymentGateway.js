@@ -272,8 +272,8 @@ class AsiaBillPaymentGateway {
     }
 
     if (!message) {
-      logger.error('cannot detect error message', {orderInfo});
-      message = 'something went wrong';
+      logger.warn('cannot detect error message', {orderInfo});
+      message = orderInfo;
     }
 
     return {
@@ -401,6 +401,7 @@ class AsiaBillPaymentGateway {
       transactionType: refundRequest.transactionType,
       reference: refundRequest.reference,
       accountId: refundRequest.accountId,
+      gatewayReference: refundRequest.gatewayReference,
     }, credential);
 
     const requestPayload = {

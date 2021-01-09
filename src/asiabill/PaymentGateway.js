@@ -452,6 +452,8 @@ class AsiaBillPaymentGateway {
         ERROR_PROCESSING_ERROR;
       errorMessage = refundRes.response.applyRefund.description ||
         'something went wrong';
+    } else {
+      logger.info(`Refund success, info: `, JSON.stringify(refundRes.response.applyRefund));
     }
     return {
       gatewayReference: refundRes.response.applyRefund.tradeNo,

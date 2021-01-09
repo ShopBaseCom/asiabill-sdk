@@ -401,6 +401,7 @@ class AsiaBillPaymentGateway {
       transactionType: refundRequest.transactionType,
       reference: refundRequest.reference,
       accountId: refundRequest.accountId,
+      gatewayReference: refundRequest.gatewayReference,
     }, credential);
 
     const requestPayload = {

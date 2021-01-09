@@ -15,7 +15,9 @@ const schemaCheckCredentialsRequest = Joi.object({
  * @return {Promise<checkCredentialsRequest>}
  */
 async function parseCheckCredentialsRequest(request) {
-  const value = await schemaCheckCredentialsRequest.validateAsync(request.body);
+  const value = await schemaCheckCredentialsRequest.validateAsync(request.body, {
+    allowUnknown: true,
+  });
   const sign = request.header('X-Signature');
   if (!ShopBaseSigner.verify(request.body, sign)) {
     throw new SignInvalidError('signature invalid');

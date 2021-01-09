@@ -4,7 +4,7 @@ const {REFUND_TYPE_PARTIAL, REFUND_TYPE_FULL} = require('../constants');
 const schemaAddress = Joi.object({
   phone: Joi.string().max(50).required(),
   country: Joi.string().max(100).required(),
-  state: Joi.string().max(100).required(),
+  state: Joi.string().max(100).optional(),
   city: Joi.string().max(100).required(),
   line1: Joi.string().max(500).required(),
   postal_code: Joi.string().max(100).required(),

@@ -272,8 +272,8 @@ class AsiaBillPaymentGateway {
     }
 
     if (!message) {
-      logger.error('cannot detect error message', {orderInfo});
-      message = 'something went wrong';
+      logger.warn('cannot detect error message', {orderInfo});
+      message = orderInfo;
     }
 
     return {

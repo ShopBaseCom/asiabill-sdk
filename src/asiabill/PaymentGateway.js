@@ -215,6 +215,9 @@ class AsiaBillPaymentGateway {
 
     await redis.set(this.getCacheKeyTranNo(orderResValid.tradeNo), orderResValid.orderNo);
 
+
+    logger.info('set ref', this.getCacheKeyTranNo(orderResValid.tradeNo), orderResValid.orderNo);
+
     return {
       errorCode, errorMessage,
       accountId: this.getAccountIdFromResponseGateway(orderResValid),
@@ -294,6 +297,8 @@ class AsiaBillPaymentGateway {
       process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE;
 
     const orderNo = await redis.get(this.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference));
+
+    logger.info('ref', this.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference), orderNo);
 
     const requestPayload = {
       merNo: credential.merNo,

@@ -83,7 +83,7 @@ async function parseOrderRequest(request) {
       line2: value['x_customer_shipping_address_2'],
     },
     shopName: value['x_shop_name'],
-    isPostPurchase: false,
+    isPostPurchase: value['x_post_purchase'],
   };
 }
 

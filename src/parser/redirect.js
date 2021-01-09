@@ -33,6 +33,7 @@ const schemaRedirectRequest = Joi.object({
   x_customer_shipping_last_name: Joi.string(),
   x_customer_shipping_phone: Joi.string(),
   x_customer_shipping_state: Joi.string().optional(),
+  x_post_purchase: Joi.bool(),
   x_customer_shipping_zip: Joi.string(),
   x_signature: Joi.string(),
 });
@@ -82,7 +83,7 @@ async function parseOrderRequest(request) {
       line2: value['x_customer_shipping_address_2'],
     },
     shopName: value['x_shop_name'],
-    isPostPurchase: false,
+    isPostPurchase: value['x_post_purchase'],
   };
 }
 

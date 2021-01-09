@@ -34,7 +34,6 @@ const {
   MAP_REFUND_ERROR,
 } = require('./constant');
 const Axios = require('../lib/Axios');
-const {REFUND_TYPE_FULL} = require('../constants');
 
 const redis = require('../lib/redis');
 
@@ -54,7 +53,9 @@ class AsiaBillPaymentGateway {
    * @return {Promise<redirectRequest>}
    */
   async getDataCreateOrder(orderRequest, credential) {
-    const result = schemaCredential.validate(credential);
+    const result = schemaCredential.validate(credential, {
+      allowUnknown: true,
+    });
     if (result.error) {
       throw result.error;
     }
@@ -167,7 +168,9 @@ class AsiaBillPaymentGateway {
    * @return {Promise<orderResponse>}
    */
   async getOrderResponse(body, credential) {
-    const result = schemaCredential.validate(credential);
+    const result = schemaCredential.validate(credential, {
+      allowUnknown: true,
+    });
     if (result.error) {
       throw result.error;
     }
@@ -184,6 +187,10 @@ class AsiaBillPaymentGateway {
       const result = this.getErrorCodeAndMessage(
           orderResValid.orderInfo,
       );
+
+      if (result.errorCode === ERROR_PROCESSING_ERROR) {
+        logger.info('debug error', orderResValid);
+      }
 
       errorCode = result.errorCode;
       errorMessage = result.errorMessage;
@@ -210,7 +217,11 @@ class AsiaBillPaymentGateway {
       logger.info('order status is confirmed', orderResValid);
     }
 
-    await redis.set(this.getCacheKeyTranNo(orderResValid.tradeNo), orderResValid.orderNo);
+    await redis.set(this.getCacheKeyTranNo(orderResValid.tradeNo),
+        orderResValid.orderNo);
+
+    logger.info(`set ref ${this.getCacheKeyTranNo(
+        orderResValid.tradeNo)} ${orderResValid.orderNo}`);
 
     return {
       errorCode, errorMessage,
@@ -290,7 +301,11 @@ class AsiaBillPaymentGateway {
       process.env.ASIABILL_RETRIEVE_URL_TEST_MODE :
       process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE;
 
-    const orderNo = await redis.get(this.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference));
+    const orderNo = await redis.get(
+        this.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference));
+
+    logger.info(`ref ${this.getCacheKeyTranNo(
+        getTransactionInfoReqValid.gatewayReference)} ${orderNo}`);
 
     const requestPayload = {
       merNo: credential.merNo,
@@ -521,7 +536,9 @@ class AsiaBillPaymentGateway {
    * @return {Promise<*>}
    */
   async validateCredential(credential) {
-    const result = schemaCredential.validate(credential);
+    const result = schemaCredential.validate(credential, {
+      allowUnknown: true,
+    });
     if (result.error) {
       throw result.error;
     }

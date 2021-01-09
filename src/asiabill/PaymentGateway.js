@@ -441,7 +441,11 @@ class AsiaBillPaymentGateway {
       errorMessage = refundRes.response.applyRefund.description ||
         'something went wrong';
     } else {
-      logger.info(`Refund success, info: `, JSON.stringify(refundRes.response.applyRefund));
+      logger.info(`Refund success,
+      batchNo: ${refundRes.response.applyRefund.batchNo},
+      tradeNo: ${refundRes.response.applyRefund.tradeNo},
+      refunReason: ${refundRes.response.applyRefund.tradeNo}.`
+      );
     }
     return {
       gatewayReference: refundRes.response.applyRefund.tradeNo,

@@ -17,7 +17,7 @@ const schemaVoidPaymentRequest = Joi.object({
 /**
  * @throws {Joi.ValidationError} will throw when validate fail
  * @param {Express.request} request Object get from request body sent from ShopBase
- * @return {Promise<captureRequest>}
+ * @return {Promise<voidRequest>}
  */
 async function parseVoidRequest(request) {
   const value = await schemaVoidPaymentRequest.validateAsync(request.body, {
@@ -31,6 +31,7 @@ async function parseVoidRequest(request) {
   return {
     accountId: value['x_account_id'],
     reference: value['x_reference'],
+    transactionType: value['x_transaction_type'],
     gatewayReference: value['x_gateway_reference'],
   };
 }

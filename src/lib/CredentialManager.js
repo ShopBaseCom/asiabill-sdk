@@ -36,7 +36,7 @@ class CredentialManager {
       logger.error(e);
     }
     try {
-      const response = await axios.get(`${process.env.SHOPBASE_ENDPOINT}/api/checkout/payment-credential`, {
+      const response = await axios.get(`${process.env.SHOPBASE_ENDPOINT}/api/checkout/payment-credential.json`, {
         params: ShopBaseSigner.sign({
           x_account_id: id,
         })});

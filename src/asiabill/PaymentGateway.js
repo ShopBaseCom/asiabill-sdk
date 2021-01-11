@@ -231,7 +231,7 @@ class AsiaBillPaymentGateway {
       amount: orderResValid.orderAmount,
       gatewayReference: orderResValid.tradeNo,
       isPostPurchase: this.isPostPurchase(orderResValid),
-      isSuccess: orderResValid.orderStatus === TRANSACTION_STATUS.PENDING,
+      isSuccess: [TRANSACTION_STATUS.PENDING, TRANSACTION_STATUS.SUCCESS].includes(orderResValid.orderStatus),
       isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
       isCancel: false,
@@ -401,6 +401,7 @@ class AsiaBillPaymentGateway {
       transactionType: refundRequest.transactionType,
       reference: refundRequest.reference,
       accountId: refundRequest.accountId,
+      gatewayReference: refundRequest.gatewayReference,
     }, credential);
 
     const requestPayload = {
@@ -451,6 +452,12 @@ class AsiaBillPaymentGateway {
         ERROR_PROCESSING_ERROR;
       errorMessage = refundRes.response.applyRefund.description ||
         'something went wrong';
+    } else {
+      logger.info(`Refund success,
+      batchNo: ${refundRes.response.applyRefund.batchNo},
+      tradeNo: ${refundRes.response.applyRefund.tradeNo},
+      refundReason: ${refundRes.response.applyRefund.refundReason}.`,
+      );
     }
     return {
       gatewayReference: refundRes.response.applyRefund.tradeNo,

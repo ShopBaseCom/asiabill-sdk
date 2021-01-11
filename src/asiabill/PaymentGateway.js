@@ -231,7 +231,7 @@ class AsiaBillPaymentGateway {
       amount: orderResValid.orderAmount,
       gatewayReference: orderResValid.tradeNo,
       isPostPurchase: this.isPostPurchase(orderResValid),
-      isSuccess: orderResValid.orderStatus === TRANSACTION_STATUS.PENDING,
+      isSuccess: [TRANSACTION_STATUS.PENDING, TRANSACTION_STATUS.SUCCESS].includes(orderResValid.orderStatus),
       isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
       isCancel: false,
@@ -456,7 +456,7 @@ class AsiaBillPaymentGateway {
       logger.info(`Refund success,
       batchNo: ${refundRes.response.applyRefund.batchNo},
       tradeNo: ${refundRes.response.applyRefund.tradeNo},
-      refundReason: ${refundRes.response.applyRefund.refundReason}.`
+      refundReason: ${refundRes.response.applyRefund.refundReason}.`,
       );
     }
     return {

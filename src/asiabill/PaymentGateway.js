@@ -231,7 +231,7 @@ class AsiaBillPaymentGateway {
       amount: orderResValid.orderAmount,
       gatewayReference: orderResValid.tradeNo,
       isPostPurchase: this.isPostPurchase(orderResValid),
-      isSuccess: [TRANSACTION_STATUS.PENDING, TRANSACTION_STATUS.SUCCESS].includes(orderResValid.orderStatus),
+      isSuccess: [TRANSACTION_STATUS.PENDING].includes(orderResValid.orderStatus),
       isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
       isCancel: false,

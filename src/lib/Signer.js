@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+
 /**
  * Signing mechanism data transform between ShopBase and provider
  */
@@ -22,10 +23,13 @@ class ShopBaseSigner {
           return 0;
         }).
         reduce(((previousValue, [key, val]) => {
+          if (typeof val === 'object') {
+            return `${previousValue}${key}${JSON.stringify(val)}`;
+          }
           return `${previousValue}${key}${val}`;
         }), '');
 
-    return crypto.createHmac('sha256', process.env.SHOPBASE_PAYMENT_KEY).
+    return crypto.createHmac('sha256', process.env.SHOPBASE_PAYMENT_KEY || '').
         update(msg).digest('hex');
   }
 
@@ -41,12 +45,25 @@ class ShopBaseSigner {
   }
 
   /**
+   * Write signature to response header
+   * @param {Express.response} res
+   * @param {integer} statusCode http response status code
+   * @param {Object} data
+   * @return {Express.response}
+   */
+  static signResponse(res, statusCode, data) {
+    delete data['x_signature'];
+    const sign = this.getSignature(data);
+    return res.header('X-Signature', sign).status(statusCode).json(data);
+  }
+
+  /**
    *
    * @param {Object} object
    * @param {string} signature
    * @return {boolean}
    */
-  static verify(object, signature) {
+  static verify(object, signature = object['x_signature']) {
     return this.sign(object).x_signature === signature;
   }
 }

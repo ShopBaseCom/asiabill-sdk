@@ -11,5 +11,47 @@ const schemaOrderResponse = Joi.object().keys({
   signInfo: Joi.string().required(),
 });
 
+const schemaGetTransactionResponse = Joi.object().keys({
+  response: Joi.object().keys({
+    tradeinfo: Joi.object().keys({
+      merNo: Joi.string().allow(null, ''),
+      gatewayNo: Joi.string().allow(null, ''),
+      orderNo: Joi.string().allow(null, ''),
+      tradeNo: Joi.string().allow(null, ''),
+      tradeDate: Joi.string().allow(null, ''),
+      tradeAmount: Joi.string().allow(null, ''),
+      tradeCurrency: Joi.string().allow(null, ''),
+      sourceWebsite: Joi.string().allow(null, ''),
+      authStatus: Joi.string().allow(null, ''),
+      queryResult: Joi.number().allow(null, ''),
+    }),
+  }),
+});
 
-module.exports = schemaOrderResponse;
+const schemaCaptureOrVoidResponse = Joi.object().keys({
+  respon: Joi.object().keys({
+    merNo: Joi.string().allow(null, ''),
+    gatewayNo: Joi.string().allow(null, ''),
+    tradeNo: Joi.string().allow(null, ''),
+    orderNo: Joi.string().allow(null, ''),
+    orderStatus: Joi.string().allow(null, ''),
+    orderInfo: Joi.string().allow(null, ''),
+  }),
+});
+
+const schemaRefundResponse = Joi.object().keys({
+  response: Joi.object().keys({
+    applyRefund: Joi.object().keys({
+      batchNo: Joi.number().allow(null, 0),
+      merNo: Joi.string().allow(null, ''),
+      gatewayNo: Joi.string().allow(null, ''),
+      code: Joi.string().allow(null, ''),
+      description: Joi.string().allow(null, ''),
+      tradeNo: Joi.string().allow(null, ''),
+      refundReason: Joi.string().allow(null, ''),
+      remark: Joi.string().allow(null, ''),
+    }),
+  }),
+});
+
+module.exports = {schemaOrderResponse, schemaGetTransactionResponse, schemaCaptureOrVoidResponse, schemaRefundResponse};

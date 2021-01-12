@@ -3,7 +3,7 @@ const ShopBaseSigner = require('../lib/Signer');
 const SignInvalidError = require('../errors/SignInvalid');
 
 const schemaRedirectRequest = Joi.object({
-  x_account_id: Joi.number().required(),
+  x_account_id: Joi.string().required(),
   x_amount: Joi.number().required(),
   x_currency: Joi.string().max(3).required(),
   x_reference: Joi.string().required(),
@@ -18,7 +18,7 @@ const schemaRedirectRequest = Joi.object({
   x_customer_billing_company: Joi.string(),
   x_customer_billing_country: Joi.string().max(2).required(),
   x_customer_billing_phone: Joi.string(),
-  x_customer_billing_state: Joi.string(),
+  x_customer_billing_state: Joi.string().optional(),
   x_customer_billing_zip: Joi.string(),
   x_customer_email: Joi.string(),
   x_customer_first_name: Joi.string(),
@@ -32,7 +32,8 @@ const schemaRedirectRequest = Joi.object({
   x_customer_shipping_first_name: Joi.string(),
   x_customer_shipping_last_name: Joi.string(),
   x_customer_shipping_phone: Joi.string(),
-  x_customer_shipping_state: Joi.string(),
+  x_customer_shipping_state: Joi.string().optional(),
+  x_post_purchase: Joi.bool(),
   x_customer_shipping_zip: Joi.string(),
   x_signature: Joi.string(),
 });
@@ -82,8 +83,28 @@ async function parseOrderRequest(request) {
       line2: value['x_customer_shipping_address_2'],
     },
     shopName: value['x_shop_name'],
-    isPostPurchase: false,
+    isPostPurchase: value['x_post_purchase'],
   };
 }
 
-module.exports = {parseOrderRequest};
+/**
+ *
+ * @param {orderResponse} res
+ * @return {*}
+ */
+function parseOrderResponse(res) {
+  return {
+    x_account_id: res.accountId,
+    x_amount: res.amount,
+    x_currency: res.currency,
+    x_gateway_reference: res.gatewayReference,
+    x_reference: res.reference,
+    x_transaction_type: res.transactionType,
+    x_test: res.isTest,
+    x_timestamp: res.timestamp,
+    x_message: res.errorMessage,
+    x_error_code: res.errorCode,
+  };
+}
+
+module.exports = {parseOrderRequest, parseOrderResponse};

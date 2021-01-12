@@ -32,13 +32,13 @@ async function createOrderHandler(req, res) {
     const orderReq = await parseOrderRequest(req.body);
     const credential = await creManager.getById(orderReq.accountId);
     orderReq.urlObject = await urlManager.getProxyUrlObject(
-      orderReq.reference, !!orderReq.isPostPurchase, orderReq.urlObject,
+        orderReq.reference, !!orderReq.isPostPurchase, orderReq.urlObject,
     );
     logger.info('url object', orderReq.urlObject);
     logger.info(process.env.HOST);
     const paymentGateway = new PaymentGateway();
     const createOrder = await paymentGateway.getDataCreateOrder(orderReq,
-      credential);
+        credential);
     return res.render('redirect', createOrder);
   } catch (e) {
     if (!res.body || !res.body['x_url_complete']) {

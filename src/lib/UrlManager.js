@@ -26,9 +26,11 @@ class UrlManager {
     await this.redis.set(this.getCacheKeyByOrderNo(ref, isPortPurchase),
         JSON.stringify(url));
 
+    this.redis.expire(this.getCacheKeyByOrderNo(ref, isPortPurchase), 60 * 60 * 24 * 30);
+
     return {
       // url define in file router.js
-      completeUrl: `${process.env.HOST}/provider-confirm`,
+      returnUrl: `${process.env.HOST}/provider-confirm`,
       callbackUrl: `${process.env.HOST}/provider-webhook`,
       cancelUrl: `${process.env.HOST}/cancel-url`,
     };
@@ -42,7 +44,7 @@ class UrlManager {
    * @return {Promise<urlObject>}
    */
   getUrlObject(ref, isPortPurchase) {
-    const key = this.getCacheKeyByOrderNo(ref, true);
+    const key = this.getCacheKeyByOrderNo(ref, isPortPurchase);
     return this.redis.get(key).then((rs) => {
       if (rs == null) {
         throw new Error(`cannot get url object with ref ${ref}`);

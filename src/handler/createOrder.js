@@ -41,7 +41,7 @@ async function createOrderHandler(req, res) {
         credential);
     return res.render('redirect', createOrder);
   } catch (e) {
-    if (!res.body || !res.body['x_url_complete']) {
+    if (!req.body || !req.body['x_url_complete']) {
       logger.error(e);
       return res.status(StatusCodes.BAD_REQUEST).json({
         x_result: RESULT_FAILED,
@@ -50,7 +50,7 @@ async function createOrderHandler(req, res) {
       });
     }
     if (e instanceof Joi.ValidationError) {
-      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
+      return redirectWithSignRequestToShopBase(res, req.body['x_url_complete'], {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_MISSING_PARAMS,
@@ -58,7 +58,7 @@ async function createOrderHandler(req, res) {
     }
 
     if (e instanceof SignInvalidError) {
-      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
+      return redirectWithSignRequestToShopBase(res, req.body['x_url_complete'], {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_INVALID_SIGNATURE,

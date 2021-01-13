@@ -192,4 +192,20 @@ const REFUND_TYPES = {
   PARTIAL: 2,
 };
 
-module.exports = {PAYMENT_METHOD, INTERFACE_INFO, MAP_ERROR, TRANSACTION_STATUS, TRANSACTION_TYPES, REFUND_TYPES, MAP_REFUND_ERROR};
+const NOTIFY_TYPES = {
+  PaymentResult: 'PaymentResult',
+  OrderStatusChanged: 'OrderStatusChanged',
+  Capture: 'Capture',
+  Void: 'Void',
+  Refund: 'Refund',
+};
+module.exports = {
+  PAYMENT_METHOD,
+  INTERFACE_INFO,
+  MAP_ERROR,
+  TRANSACTION_STATUS,
+  TRANSACTION_TYPES,
+  REFUND_TYPES,
+  MAP_REFUND_ERROR,
+  NOTIFY_TYPES,
+};

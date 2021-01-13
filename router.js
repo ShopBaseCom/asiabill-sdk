@@ -12,7 +12,7 @@ const router = new express.Router();
 
 router.post('/create-order', createOrderHandler);
 
-router.get('/provider-webhook', gatewayWebhookHandler);
+router.post('/provider-webhook', gatewayWebhookHandler);
 
 router.post('/provider-confirm', gatewayConfirmHandler);
 

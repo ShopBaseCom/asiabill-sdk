@@ -31,7 +31,7 @@ async function gatewayWebhookHandler(req, res) {
       },
     });
     logger.info('[webhook] ShopBase Response: ', response.data);
-    res.status(StatusCodes.OK).send();
+    res.status(StatusCodes.OK).send('success');
   } catch (err) {
     logger.error('[webhook] handle webhook err', err);
     handleError(res, err);

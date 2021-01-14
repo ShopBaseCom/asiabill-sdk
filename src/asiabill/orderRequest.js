@@ -2,7 +2,7 @@ const Joi = require('joi');
 const {REFUND_TYPE_PARTIAL, REFUND_TYPE_FULL} = require('../constants');
 
 const schemaAddress = Joi.object({
-  phone: Joi.string().max(50).required(),
+  phone: Joi.string().max(50).optional(),
   country: Joi.string().max(100).required(),
   state: Joi.string().max(100).optional(),
   city: Joi.string().max(100).required(),
@@ -13,7 +13,7 @@ const schemaAddress = Joi.object({
 const schemaOrderRequest = Joi.object().keys({
   currency: Joi.string().max(3).required(),
   amount: Joi.number().max(1000000000).required(),
-  firstName: Joi.string().max(100).required(),
+  firstName: Joi.string().max(100).optional(),
   lastName: Joi.string().max(50).required(),
   email: Joi.string().max(200).required(),
 

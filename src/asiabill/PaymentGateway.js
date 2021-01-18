@@ -34,6 +34,7 @@ const {
   REFUND_TYPES,
   MAP_REFUND_ERROR,
   NOTIFY_TYPES,
+  ErrorCodeCustomerCancel,
 } = require('./constant');
 const Axios = require('../lib/Axios');
 const SignInvalidError = require('../errors/SignInvalid');
@@ -238,7 +239,7 @@ class AsiaBillPaymentGateway {
       isSuccess: [TRANSACTION_STATUS.PENDING].includes(orderResValid.orderStatus),
       isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
-      isCancel: false,
+      isCancel: orderResValid.orderInfo.startsWith(ErrorCodeCustomerCancel),
       transactionType: TRANSACTION_TYPE_AUTHORIZATION,
     };
   }

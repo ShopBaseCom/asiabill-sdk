@@ -12,6 +12,7 @@ const {
   schemaGetTransactionResponse,
   schemaCaptureOrVoidResponse,
   schemaRefundResponse,
+  schemaWebhookResponse,
 } = require('./orderResponse');
 const logger = require('../lib/logger');
 const Joi = require('joi');
@@ -32,8 +33,12 @@ const {
   INTERFACE_INFO,
   REFUND_TYPES,
   MAP_REFUND_ERROR,
+  NOTIFY_TYPES,
+  ErrorCodeCustomerCancel,
 } = require('./constant');
 const Axios = require('../lib/Axios');
+const SignInvalidError = require('../errors/SignInvalid');
+const NotifyTypeNotSupportError = require('../errors/NotifyTypeError');
 
 const redis = require('../lib/redis');
 
@@ -231,10 +236,10 @@ class AsiaBillPaymentGateway {
       amount: orderResValid.orderAmount,
       gatewayReference: orderResValid.tradeNo,
       isPostPurchase: this.isPostPurchase(orderResValid),
-      isSuccess: [TRANSACTION_STATUS.PENDING, TRANSACTION_STATUS.SUCCESS].includes(orderResValid.orderStatus),
+      isSuccess: [TRANSACTION_STATUS.PENDING].includes(orderResValid.orderStatus),
       isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
-      isCancel: false,
+      isCancel: orderResValid.orderInfo.startsWith(ErrorCodeCustomerCancel),
       transactionType: TRANSACTION_TYPE_AUTHORIZATION,
     };
   }
@@ -342,7 +347,7 @@ class AsiaBillPaymentGateway {
       isTest: credential.sandbox,
       amount,
       gatewayReference: tradeInfo.tradeNo,
-      isSuccess: parseInt(tradeInfo.queryResult) === TRANSACTION_STATUS.SUCCESS,
+      isSuccess: [TRANSACTION_STATUS.PENDING, TRANSACTION_STATUS.SUCCESS].includes(parseInt(tradeInfo.queryResult)),
       transactionType: getTransactionInfoReqValid.transactionType,
     };
   }
@@ -399,7 +404,6 @@ class AsiaBillPaymentGateway {
 
     const getTransactionResponse = await this.getTransaction({
       transactionType: refundRequest.transactionType,
-      reference: refundRequest.reference,
       accountId: refundRequest.accountId,
       gatewayReference: refundRequest.gatewayReference,
     }, credential);
@@ -609,6 +613,83 @@ class AsiaBillPaymentGateway {
 
     return {
       status: RESULT_INVALID,
+    };
+  }
+
+  /**
+   * transform and validate webhook from gateway back to ShopBase
+   * @public
+   * @throws {Joi.ValidationError, SignInvalidError, NotifyTypeNotSupportError}
+   * @param {Object} body
+   * @param {AsiaBillCredential} credential
+   * @return {Promise<orderResponse>}
+   */
+  async getOrderResponseFromWebhook(body, credential) {
+    const creResValid = schemaCredential.validate(credential, {
+      allowUnknown: true,
+    });
+    if (creResValid.error) {
+      throw creResValid.error;
+    }
+    const webhookResValid = await schemaWebhookResponse.validateAsync(
+        body, {
+          allowUnknown: true,
+        },
+    );
+
+    const signInfo = sign([
+      credential.merNo,
+      credential.gatewayNo,
+      webhookResValid.tradeNo,
+      webhookResValid.orderNo,
+      webhookResValid.orderCurrency,
+      webhookResValid.orderAmount,
+      webhookResValid.orderStatus,
+      webhookResValid.orderInfo,
+      credential.signKey,
+    ]);
+
+    if (signInfo.toUpperCase() !== webhookResValid.signInfo) {
+      throw new SignInvalidError('sign invalid');
+    }
+
+    if (webhookResValid.notifyType !== NOTIFY_TYPES.PaymentResult) {
+      throw new NotifyTypeNotSupportError('notify type not supported');
+    }
+
+    let errorCode;
+    let errorMessage;
+
+    if (webhookResValid.orderStatus === TRANSACTION_STATUS.FAILURE) {
+      const result = this.getErrorCodeAndMessage(
+          webhookResValid.orderInfo,
+      );
+
+      if (result.errorCode === ERROR_PROCESSING_ERROR) {
+        logger.info('debug error', webhookResValid);
+      }
+
+      errorCode = result.errorCode;
+      errorMessage = result.errorMessage;
+    }
+
+    await redis.set(this.getCacheKeyTranNo(webhookResValid.tradeNo),
+        webhookResValid.orderNo);
+
+    return {
+      errorCode,
+      errorMessage,
+      accountId: this.getAccountIdFromResponseGateway(webhookResValid),
+      reference: this.getRefFromResponseGateway(webhookResValid),
+      currency: webhookResValid.orderCurrency,
+      amount: webhookResValid.orderAmount,
+      gatewayReference: webhookResValid.tradeNo,
+      isPostPurchase: this.isPostPurchase(webhookResValid),
+      isSuccess: [TRANSACTION_STATUS.PENDING].includes(webhookResValid.orderStatus),
+      isTest: credential.sandbox,
+      timestamp: new Date().toISOString(),
+      isCancel: false,
+      transactionType: TRANSACTION_TYPE_AUTHORIZATION,
     };
   }
 

@@ -6,8 +6,99 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>ShopBase</title>
+    <link href="http://fonts.cdnfonts.com/css/arial-mt" rel="stylesheet">
+    <style>
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 97vh;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+            font-weight: 300;
+        }
+
+        #loading {
+            position: relative;
+            width: 90px;
+            height: 90px;
+        }
+
+        #loading:after {
+            content: '';
+            width: 84px;
+            height: 84px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            border-width: 2.5px;
+            border-style: solid;
+            border-color: #315E81 #B0B0B0 #B0B0B0;
+            border-radius: 100%;
+            animation-name: spin;
+            animation-duration: .6s;
+            animation-iteration-count: infinite;
+            animation-timing-function: linear;
+        }
+
+    </style>
 </head>
 <body>
+<div class="container">
+    <div id="loading">
+        <svg id="e7wdfam6y02n1" style="
+    width: 90px;
+    height: 90px;
+">
+            <g id="e7wdfam6y02n2">
+                <g id="e7wdfam6y02n3" transform="matrix(1 0 0 1 -675 -433)">
+                    <g id="e7wdfam6y02n4" transform="matrix(1 0 0 1 676 434)">
+                        <!--                    <g id="e7wdfam6y02n5">-->
+                        <!--                        <circle id="e7wdfam6y02n6" r="43.278700" transform="matrix(1 0 0 1 44 44)" opacity="0.4" fill="none"-->
+                        <!--                                fill-rule="evenodd" stroke="rgb(176,176,176)" stroke-width="3" stroke-linecap="round"-->
+                        <!--                                stroke-linejoin="round"/>-->
+                        <!--                    </g>-->
+                        <g id="e7wdfam6y02n8" transform="matrix(1 0 0 1 23 22)">
+                            <path id="e7wdfam6y02n9"
+                                  d="M21,0C25.501880,0,29.166872,3.586932,29.298656,8.061621L29.302326,8.311111L29.302326,15.644444L34.674419,15.644444C34.914170,15.644444,35.113571,15.817389,35.154922,16.045455L35.162791,16.133333L35.162791,33.733333C35.162791,33.973339,34.990029,34.172950,34.762204,34.214346L34.674419,34.222222L7.325581,34.222222C7.085830,34.222222,6.886429,34.049278,6.845078,33.821212L6.837209,33.733333L6.837209,16.133333C6.837209,15.893328,7.009971,15.693716,7.237796,15.652321L7.325581,15.644444L12.697674,15.644444L12.697674,8.311111C12.697674,3.721011,16.414752,0,21,0ZM34.186047,16.622222L7.813953,16.622222L7.813953,33.244444L34.186047,33.244444L34.186047,16.622222ZM21,20.533333C22.888043,20.533333,24.418605,22.065514,24.418605,23.955556C24.418605,25.679287,23.145549,27.105365,21.489300,27.342988L21.488372,28.844444C21.488372,29.114450,21.269720,29.333333,21,29.333333C20.760248,29.333333,20.560848,29.160389,20.519496,28.932323L20.511628,28.844444L20.511677,27.343128C18.854951,27.105926,17.581395,25.679625,17.581395,23.955556C17.581395,22.065514,19.111957,20.533333,21,20.533333ZM21,21.511111C19.651398,21.511111,18.558139,22.605526,18.558139,23.955556C18.558139,25.305585,19.651398,26.400000,21,26.400000C22.348602,26.400000,23.441861,25.305585,23.441861,23.955556C23.441861,22.605526,22.348602,21.511111,21,21.511111ZM21,0.977778C17.033523,0.977778,13.803332,4.133531,13.678183,8.073774L13.674419,8.311111L13.674419,15.644444L28.325581,15.644444L28.325581,8.311111C28.325581,4.261023,25.045807,0.977778,21,0.977778Z"
+                                  fill="rgb(34,34,34)" stroke="none" stroke-width="1"/>
+                            <ellipse id="e7wdfam6y02n10" rx="1.465120" ry="1.466670"
+                                     transform="matrix(1 0 0 1 11.56400000000000 42.53330000000000)"
+                                     fill="rgb(34,34,34)"
+                                     fill-rule="evenodd" stroke="none" stroke-width="1"/>
+                            <ellipse id="e7wdfam6y02n11" rx="1.465120" ry="1.466670"
+                                     transform="matrix(1 0 0 1 21.17440000000000 42.53330000000000)"
+                                     fill="rgb(34,34,34)"
+                                     fill-rule="evenodd" stroke="none" stroke-width="1"/>
+                            <circle id="e7wdfam6y02n12" r="1.500000"
+                                    transform="matrix(1 0 0 1 30.81980000000000 42.50000000000000)" fill="rgb(34,34,34)"
+                                    fill-rule="evenodd" stroke="none" stroke-width="1"/>
+                            <circle id="e7wdfam6y02n13" r="1.500000"
+                                    transform="matrix(1 0 0 1 40.50000000000000 42.50000000000000)" fill="rgb(34,34,34)"
+                                    fill-rule="evenodd" stroke="none" stroke-width="1"/>
+                            <ellipse id="e7wdfam6y02n14" rx="1.465120" ry="1.466670"
+                                     transform="matrix(1 0 0 1 1.95349000000000 42.53330000000000)" fill="rgb(34,34,34)"
+                                     fill-rule="evenodd" stroke="none" stroke-width="1"/>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </svg>
+    </div>
+    <div style="margin-top: 32px;text-align: center;line-height: 25px;">
+        Redirecting you to AsiaBill securely... <br/>
+        Please wait and <b>do not close</b> this window.
+    </div>
+</div>
 <form action="<%= url %>" method="post">
     <% for (var [key, value] of Object.entries(data)) { %>
     <input type="hidden" name="<%= key %>" value="<%= value %>"/>

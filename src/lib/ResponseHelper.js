@@ -10,6 +10,7 @@ const {
 } = require('../constants');
 const logger = require('./logger');
 const SignInvalidError = require('../errors/SignInvalid');
+const NotifyTypeNotSupportError = require('../errors/NotifyTypeError');
 
 /**
  * @param {Express.response} res
@@ -42,6 +43,14 @@ function handleError(res, err) {
       x_result: RESULT_FAILED,
       x_message: err.message,
       x_error_code: ERROR_INVALID_SIGNATURE,
+    });
+  }
+
+  if (err instanceof NotifyTypeNotSupportError) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      x_result: RESULT_FAILED,
+      x_message: err.message,
+      x_error_code: ERROR_PROCESSING_ERROR,
     });
   }
 

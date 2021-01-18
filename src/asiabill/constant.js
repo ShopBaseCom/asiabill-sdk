@@ -167,8 +167,6 @@ const MAP_REFUND_ERROR = {
   '99': ERROR_PROCESSING_ERROR, // System error
 };
 
-const ErrorCodeCustomerCancel = 'E0008';
-
 const TRANSACTION_STATUS = {
   TO_BE_CONFIRMED: -2,
   PENDING: -1,
@@ -210,5 +208,4 @@ module.exports = {
   REFUND_TYPES,
   MAP_REFUND_ERROR,
   NOTIFY_TYPES,
-  ErrorCodeCustomerCancel,
 };

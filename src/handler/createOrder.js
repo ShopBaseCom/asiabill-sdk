@@ -39,10 +39,9 @@ async function createOrderHandler(req, res) {
     const paymentGateway = new PaymentGateway();
     const createOrder = await paymentGateway.getDataCreateOrder(orderReq,
         credential);
-    redis.set('test', JSON.stringify(createOrder));
     return res.render('redirect', createOrder);
   } catch (e) {
-    if (!res.body || !res.body['x_url_complete']) {
+    if (!req.body || !req.body['x_url_complete']) {
       logger.error(e);
       return res.status(StatusCodes.BAD_REQUEST).json({
         x_result: RESULT_FAILED,
@@ -51,12 +50,7 @@ async function createOrderHandler(req, res) {
       });
     }
     if (e instanceof Joi.ValidationError) {
-      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
-        x_result: RESULT_FAILED,
-        x_message: e.message,
-        x_error_code: ERROR_MISSING_PARAMS,
-      });
-      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
+      return redirectWithSignRequestToShopBase(res, req.body['x_url_complete'], {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_MISSING_PARAMS,
@@ -64,7 +58,7 @@ async function createOrderHandler(req, res) {
     }
 
     if (e instanceof SignInvalidError) {
-      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
+      return redirectWithSignRequestToShopBase(res, req.body['x_url_complete'], {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_INVALID_SIGNATURE,
@@ -72,7 +66,7 @@ async function createOrderHandler(req, res) {
     }
 
     if (e instanceof InvalidAccountError) {
-      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
+      return redirectWithSignRequestToShopBase(res, req.body['x_url_complete'], {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_MISSING_PARAMS,
@@ -80,7 +74,7 @@ async function createOrderHandler(req, res) {
     }
 
     if (e instanceof ShopBaseSystemError) {
-      return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
+      return redirectWithSignRequestToShopBase(res, req.body['x_url_complete'], {
         x_result: RESULT_FAILED,
         x_message: e.message,
         x_error_code: ERROR_PROCESSING_ERROR,
@@ -90,7 +84,7 @@ async function createOrderHandler(req, res) {
     // system or unexpected error need call alert
     logger.error(e);
 
-    return redirectWithSignRequestToShopBase(res, res.body['x_url_complete'], {
+    return redirectWithSignRequestToShopBase(res, req.body['x_url_complete'], {
       x_result: RESULT_FAILED,
       x_message: e.message,
       x_error_code: ERROR_PROCESSING_ERROR,

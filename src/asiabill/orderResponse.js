@@ -54,4 +54,19 @@ const schemaRefundResponse = Joi.object().keys({
   }),
 });
 
-module.exports = {schemaOrderResponse, schemaGetTransactionResponse, schemaCaptureOrVoidResponse, schemaRefundResponse};
+const schemaWebhookResponse = Joi.object().keys({
+  'signInfo': Joi.string().required(),
+  'orderNo': Joi.string().required(),
+  'gatewayNo': Joi.string().required(),
+  'tradeNo': Joi.string().required(),
+  'authTypeStatus': Joi.number().required(),
+  'orderCurrency': Joi.string().max(3).required(),
+  'orderStatus': Joi.number().required(),
+  'remark': Joi.string().required(),
+  'orderAmount': Joi.number().required(),
+  'notifyType': Joi.string().required(),
+  'merNo': Joi.string().required(),
+  'orderInfo': Joi.string().required(),
+});
+
+module.exports = {schemaOrderResponse, schemaGetTransactionResponse, schemaCaptureOrVoidResponse, schemaRefundResponse, schemaWebhookResponse};

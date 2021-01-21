@@ -36,11 +36,7 @@ const schemaRedirectRequest = Joi.object({
   x_post_purchase: Joi.bool(),
   x_customer_shipping_zip: Joi.string(),
   x_signature: Joi.string(),
-  purchase_items: Joi.array().items(Joi.object({
-    name: Joi.string().required(),
-    quantity: Joi.number().required(),
-    price: Joi.number().required(),
-  })).optional(),
+  purchase_items: Joi.string().optional(),
 });
 
 /**
@@ -89,7 +85,7 @@ async function parseOrderRequest(request) {
     },
     shopName: value['x_shop_name'],
     isPostPurchase: value['x_post_purchase'],
-    purchaseItems: value['purchase_items'],
+    purchaseItems: value['purchase_items'] ? JSON.parse(value['purchase_items']) : null,
   };
 }
 

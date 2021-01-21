@@ -107,6 +107,14 @@ class AsiaBillPaymentGateway {
       url: this.getUrlApi(credential),
     };
 
+    if (orderReqValid.purchaseItems) {
+      redirectRequest.data.goods_detail = orderReqValid.purchaseItems.map((item) => ({
+        productName: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+    }
+
     redirectRequest.data.signInfo = sign([
       credential.merNo,
       credential.gatewayNo,

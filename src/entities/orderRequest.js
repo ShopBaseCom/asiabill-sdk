@@ -21,6 +21,14 @@
  */
 
 /**
+ @typedef purchaseItem
+ @type {Object}
+ @property {string} name
+ @property {number} quantity
+ @property {number} price
+ */
+
+/**
  @typedef orderRequest
  @type {Object}
  @property {customerAddress} billingAddress Billing information for order.
@@ -35,5 +43,6 @@
  @property {string} shopName
  @property {string} reference
  @property {number} accountId
+ @property {Array<purchaseItem>} purchaseItems
  */
 

@@ -101,7 +101,11 @@
 </div>
 <form action="<%= url %>" method="post">
     <% for (var [key, value] of Object.entries(data)) { %>
-    <input type="hidden" name="<%= key %>" value="<%= value %>"/>
+        <% if (typeof value === 'object') { %>
+            <input type="hidden" name="<%= key %>" value='<%- JSON.stringify(value) %>'/>
+        <% } else { %>
+            <input type="hidden" name="<%= key %>" value="<%= value %>"/>
+        <% } %>
     <% } %>
     <input type="submit" style="display: none" id="submit">
 </form>

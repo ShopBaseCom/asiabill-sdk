@@ -108,11 +108,12 @@ class AsiaBillPaymentGateway {
     };
 
     if (orderReqValid.purchaseItems) {
-      redirectRequest.data.goods_detail = orderReqValid.purchaseItems.map((item) => ({
-        productName: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      }));
+      redirectRequest.data.goods_detail = orderReqValid.purchaseItems.map(
+          (item) => ({
+            productName: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          }));
     }
 
     redirectRequest.data.signInfo = sign([
@@ -244,7 +245,8 @@ class AsiaBillPaymentGateway {
       amount: orderResValid.orderAmount,
       gatewayReference: orderResValid.tradeNo,
       isPostPurchase: this.isPostPurchase(orderResValid),
-      isSuccess: [TRANSACTION_STATUS.PENDING].includes(orderResValid.orderStatus),
+      isSuccess: [TRANSACTION_STATUS.PENDING].includes(
+          orderResValid.orderStatus),
       isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
       isCancel: orderResValid.orderInfo.startsWith(ErrorCodeCustomerCancel),
@@ -274,7 +276,13 @@ class AsiaBillPaymentGateway {
     let errorCode = MAP_ERROR[code];
 
     if (!errorCode) {
-      [code, message] = orderInfo.split(':');
+      const [field1, field2, field3] = orderInfo.split(':');
+      if (field3) {
+        message = field3;
+      } else {
+        message = field2;
+      }
+      code = field1;
     }
 
     errorCode = MAP_ERROR[code];
@@ -355,7 +363,9 @@ class AsiaBillPaymentGateway {
       isTest: credential.sandbox,
       amount,
       gatewayReference: tradeInfo.tradeNo,
-      isSuccess: [TRANSACTION_STATUS.PENDING, TRANSACTION_STATUS.SUCCESS].includes(parseInt(tradeInfo.queryResult)),
+      isSuccess: [
+        TRANSACTION_STATUS.PENDING,
+        TRANSACTION_STATUS.SUCCESS].includes(parseInt(tradeInfo.queryResult)),
       transactionType: getTransactionInfoReqValid.transactionType,
     };
   }
@@ -693,7 +703,8 @@ class AsiaBillPaymentGateway {
       amount: webhookResValid.orderAmount,
       gatewayReference: webhookResValid.tradeNo,
       isPostPurchase: this.isPostPurchase(webhookResValid),
-      isSuccess: [TRANSACTION_STATUS.PENDING].includes(webhookResValid.orderStatus),
+      isSuccess: [TRANSACTION_STATUS.PENDING].includes(
+          webhookResValid.orderStatus),
       isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
       isCancel: false,

@@ -277,7 +277,7 @@ class AsiaBillPaymentGateway {
 
     if (!errorCode) {
       // get error from string
-      const rs = orderInfo.match(/([^:])+:(.*)/);
+      const rs = orderInfo.match(/([^:]+):(.*)/);
       if (rs && rs[1] && rs[2]) {
         code = rs[1];
         message = rs[2];

@@ -6,6 +6,7 @@ const {
   ERROR_CALLER_ISSUER,
   ERROR_PROCESSING_ERROR,
   ERROR_PAYMENT_NOT_SUPPORTED,
+  ERROR_MISSING_PARAMS,
 } = require('../constants');
 const PAYMENT_METHOD = 'Credit Card';
 const INTERFACE_INFO = 'ShopBase';
@@ -36,39 +37,39 @@ const MAP_ERROR = {
   I0023: ERROR_PROCESSING_ERROR, // Order currency is incorrect
   I0024: ERROR_PROCESSING_ERROR, // Return URL cannot be empty
   I0025: ERROR_PROCESSING_ERROR, // The length of returning URL cannot exceed 1000 characters
-  I0026: ERROR_CALLER_ISSUER, // Card No cannot be empty
-  I0027: ERROR_CALLER_ISSUER, // Please input 13 or 16 digit
-  I0028: ERROR_CALLER_ISSUER, // Please input number
-  I0029: ERROR_CALLER_ISSUER, // Card Number should begin with 4 or 5
-  I0030: ERROR_CALLER_ISSUER, // Card Number is incorrect
-  I0031: ERROR_CALLER_ISSUER, // Month cannot be empty
-  I0032: ERROR_CALLER_ISSUER, // Please input double digit only;
-  I0033: ERROR_CALLER_ISSUER, // Please input numbers only
-  I0034: ERROR_CALLER_ISSUER, // The month should be between 1-12
-  I0035: ERROR_CALLER_ISSUER, // Year cannot be empty
-  I0036: ERROR_CALLER_ISSUER, // Please input 4-digit only
-  I0037: ERROR_CALLER_ISSUER, // Please input numbers only
-  I0038: ERROR_CALLER_ISSUER, // Year and month cannot be smaller than current date and greater than 10 year
-  I0039: ERROR_CALLER_ISSUER, // Verification code cannot be empty
-  I0040: ERROR_CALLER_ISSUER, // Please input 3-digit Verification code
-  I0041: ERROR_CALLER_ISSUER, // Please input numbers only
-  I0042: ERROR_CALLER_ISSUER, // Issuing bank cannot be empty
-  I0043: ERROR_CALLER_ISSUER, // Please input between 2-50 characters only
-  I0044: ERROR_CALLER_ISSUER, // First name cannot be empty
-  I0045: ERROR_CALLER_ISSUER, // Please input between 2-50 characters only
-  I0046: ERROR_CALLER_ISSUER, // Last name cannot empty
-  I0047: ERROR_CALLER_ISSUER, // Please input between 2-50 characters only
-  I0048: ERROR_CALLER_ISSUER, // E-mail address cannot be empty
-  I0049: ERROR_CALLER_ISSUER, // Please input between 2-100 characters only
-  I0050: ERROR_CALLER_ISSUER, // E-mail address format is incorrect
-  I0051: ERROR_CALLER_ISSUER, // The phone number of card holder cannot be empty
-  I0052: ERROR_CALLER_ISSUER, // Please input between 2-50 characters only
-  I0053: ERROR_CALLER_ISSUER, // The country of cardholder cannot be empty
-  I0054: ERROR_CALLER_ISSUER, // Please input between 2-50 characters only
-  I0055: ERROR_CALLER_ISSUER, // The address of cardholder cannot be empty
-  I0056: ERROR_CALLER_ISSUER, // Please input between 2-100 characters only
-  I0057: ERROR_CALLER_ISSUER, // The zip code of cardholder cannot be empty
-  I0058: ERROR_CALLER_ISSUER, // Please input between 2-50 characters only
+  I0026: ERROR_MISSING_PARAMS, // Card No cannot be empty
+  I0027: ERROR_MISSING_PARAMS, // Please input 13 or 16 digit
+  I0028: ERROR_MISSING_PARAMS, // Please input number
+  I0029: ERROR_MISSING_PARAMS, // Card Number should begin with 4 or 5
+  I0030: ERROR_MISSING_PARAMS, // Card Number is incorrect
+  I0031: ERROR_MISSING_PARAMS, // Month cannot be empty
+  I0032: ERROR_MISSING_PARAMS, // Please input double digit only;
+  I0033: ERROR_MISSING_PARAMS, // Please input numbers only
+  I0034: ERROR_MISSING_PARAMS, // The month should be between 1-12
+  I0035: ERROR_MISSING_PARAMS, // Year cannot be empty
+  I0036: ERROR_MISSING_PARAMS, // Please input 4-digit only
+  I0037: ERROR_MISSING_PARAMS, // Please input numbers only
+  I0038: ERROR_MISSING_PARAMS, // Year and month cannot be smaller than current date and greater than 10 year
+  I0039: ERROR_MISSING_PARAMS, // Verification code cannot be empty
+  I0040: ERROR_MISSING_PARAMS, // Please input 3-digit Verification code
+  I0041: ERROR_MISSING_PARAMS, // Please input numbers only
+  I0042: ERROR_MISSING_PARAMS, // Issuing bank cannot be empty
+  I0043: ERROR_MISSING_PARAMS, // Please input between 2-50 characters only
+  I0044: ERROR_MISSING_PARAMS, // First name cannot be empty
+  I0045: ERROR_MISSING_PARAMS, // Please input between 2-50 characters only
+  I0046: ERROR_MISSING_PARAMS, // Last name cannot empty
+  I0047: ERROR_MISSING_PARAMS, // Please input between 2-50 characters only
+  I0048: ERROR_MISSING_PARAMS, // E-mail address cannot be empty
+  I0049: ERROR_MISSING_PARAMS, // Please input between 2-100 characters only
+  I0050: ERROR_MISSING_PARAMS, // E-mail address format is incorrect
+  I0051: ERROR_MISSING_PARAMS, // The phone number of card holder cannot be empty
+  I0052: ERROR_MISSING_PARAMS, // Please input between 2-50 characters only
+  I0053: ERROR_MISSING_PARAMS, // The country of cardholder cannot be empty
+  I0054: ERROR_MISSING_PARAMS, // Please input between 2-50 characters only
+  I0055: ERROR_MISSING_PARAMS, // The address of cardholder cannot be empty
+  I0056: ERROR_MISSING_PARAMS, // Please input between 2-100 characters only
+  I0057: ERROR_MISSING_PARAMS, // The zip code of cardholder cannot be empty
+  I0058: ERROR_MISSING_PARAMS, // Please input between 2-50 characters only
   I0059: ERROR_PROCESSING_ERROR, // Property{0},can not be empty
   I0060: ERROR_PROCESSING_ERROR, // Property{0},length is more than {1}
   I0061: ERROR_PROCESSING_ERROR, // Duplicate Order

@@ -285,6 +285,13 @@ class AsiaBillPaymentGateway {
       code = field1;
     }
 
+    if (code === ErrorCodeCustomerCancel) {
+      return {
+        errorCode: ERROR_CARD_DECLINED,
+        errorMessage: message,
+      };
+    }
+
     errorCode = MAP_ERROR[code];
 
     if (!errorCode) {

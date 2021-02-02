@@ -34,6 +34,7 @@ const {
   REFUND_TYPES,
   MAP_REFUND_ERROR,
   NOTIFY_TYPES,
+  ErrorCodeCustomerCancel,
 } = require('./constant');
 const Axios = require('../lib/Axios');
 const SignInvalidError = require('../errors/SignInvalid');
@@ -105,6 +106,14 @@ class AsiaBillPaymentGateway {
       },
       url: this.getUrlApi(credential),
     };
+
+    if (orderReqValid.purchaseItems) {
+      redirectRequest.data.goods_detail = orderReqValid.purchaseItems.map((item) => ({
+        productName: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+    }
 
     redirectRequest.data.signInfo = sign([
       credential.merNo,
@@ -238,7 +247,7 @@ class AsiaBillPaymentGateway {
       isSuccess: [TRANSACTION_STATUS.PENDING].includes(orderResValid.orderStatus),
       isTest: credential.sandbox,
       timestamp: new Date().toISOString(),
-      isCancel: false,
+      isCancel: orderResValid.orderInfo.startsWith(ErrorCodeCustomerCancel),
       transactionType: TRANSACTION_TYPE_AUTHORIZATION,
     };
   }

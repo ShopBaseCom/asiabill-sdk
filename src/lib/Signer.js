@@ -12,7 +12,7 @@ class ShopBaseSigner {
   static getSignature(obj) {
     const objEntities = Object.entries(obj);
     const msg = objEntities.
-        filter(([_, val]) => val !== undefined).
+        filter(([key, val]) => key.startsWith('x_') && val !== undefined).
         sort(([key], [key2]) => {
           if (key < key2) {
             return -1;

@@ -1,7 +1,7 @@
 /**
  * Interface for classes that represent a Payment Gateway.
  *
- * @interface PaymentGateway
+ * @interface Interfaces
  */
 
 /**
@@ -9,7 +9,7 @@
  * @throws {Joi.ValidationError}
  * @public
  * @param {Object} body
- * @name PaymentGateway#getAccountIdFromResponseGateway
+ * @name Interfaces#getAccountIdFromResponseGateway
  * @return {string}
  */
 
@@ -18,7 +18,7 @@
  * @throws {Joi.ValidationError}
  * @function
  * @param {Object} body
- * @name PaymentGateway#getRefFromResponseGateway
+ * @name Interfaces#getRefFromResponseGateway
  * @return {string}
  */
 
@@ -27,7 +27,7 @@
  * @throws {Joi.ValidationError}
  * @function
  * @param {Object} body
- * @name PaymentGateway#isPostPurchase
+ * @name Interfaces#isPostPurchase
  * @return {boolean}
  */
 
@@ -36,7 +36,7 @@
  * @function
  * @param {orderRequest} orderRequest
  * @param {PaymentGatewayCredential} credential
- * @name PaymentGateway#getDataCreateOrder
+ * @name Interfaces#getDataCreateOrder
  * @returns {Promise<redirectRequest>}
  */
 
@@ -45,7 +45,7 @@
  * @throws {Joi.ValidationError, SignInvalidError}
  * @param {Object} body
  * @param {PaymentGatewayCredential} credential
- * @name PaymentGateway#getOrderResponse
+ * @name Interfaces#getOrderResponse
  * @return {Promise<orderResponse>}
  */
 
@@ -55,7 +55,7 @@
  * @throws {Joi.ValidationError}
  * @param {getTransactionRequest} getTransactionRequest
  * @param {PaymentGatewayCredential} credential
- * @name PaymentGateway#getTransaction
+ * @name Interfaces#getTransaction
  * @return {Promise<orderResponse>}
  */
 
@@ -64,6 +64,6 @@
  * @throws {Joi.ValidationError}
  * @param {getTransactionRequest}
  * @param {PaymentGatewayCredential} credential
- * @name PaymentGateway#getTransaction
+ * @name Interfaces#getTransaction
  * @return {Promise<orderResponse>}
  */

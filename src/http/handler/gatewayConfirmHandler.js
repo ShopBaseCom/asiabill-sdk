@@ -1,24 +1,24 @@
 const Joi = require('joi');
 
 // should using factory return interface
-const PaymentGateway = require('../asiabill/PaymentGateway');
+const PaymentGateway = require('../../asiabill/PaymentGateway');
 
-const redis = require('../lib/redis');
-const CredentialManager = require('../lib/CredentialManager');
-const UrlManager = require('../lib/UrlManager');
-const logger = require('../lib/logger');
-const StatusCodes = require('../constants/statusCodes');
-const SignInvalidError = require('../errors/SignInvalid');
-const InvalidAccountError = require('../errors/InvalidAccountError');
-const ShopBaseSystemError = require('../errors/ShopBaseSystemError');
+const redis = require('../../lib/redis');
+const CredentialManager = require('../../lib/CredentialManager');
+const UrlManager = require('../../lib/UrlManager');
+const logger = require('../../lib/logger');
+const StatusCodes = require('../../constants/statusCodes');
+const SignInvalidError = require('../../errors/SignInvalid');
+const InvalidAccountError = require('../../errors/InvalidAccountError');
+const ShopBaseSystemError = require('../../errors/ShopBaseSystemError');
 const {parseOrderResponse} = require('../parser/response');
-const {redirectWithSignRequestToShopBase} = require('../lib/ResponseHelper');
+const {redirectWithSignRequestToShopBase} = require('../../lib/ResponseHelper');
 const {
   ERROR_PROCESSING_ERROR,
   ERROR_INVALID_SIGNATURE,
   ERROR_MISSING_PARAMS,
   RESULT_FAILED,
-} = require('../constants');
+} = require('../../constants');
 
 const creManager = new CredentialManager(redis);
 const urlManager = new UrlManager(redis);

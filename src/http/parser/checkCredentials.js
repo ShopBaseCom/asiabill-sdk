@@ -1,7 +1,7 @@
 const Joi = require('joi');
-const asiaBillCredential = require('../asiabill/credential');
-const ShopBaseSigner = require('../lib/Signer');
-const SignInvalidError = require('../errors/SignInvalid');
+const asiaBillCredential = require('../../asiabill/credential');
+const ShopBaseSigner = require('../../lib/Signer');
+const SignInvalidError = require('../../errors/SignInvalid');
 
 const schemaCheckCredentialsRequest = Joi.object({
   x_shop_id: Joi.number().required(),

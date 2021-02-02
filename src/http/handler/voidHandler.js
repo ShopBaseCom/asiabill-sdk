@@ -1,14 +1,14 @@
 const {
   StatusCodes,
-} = require('../constants');
+} = require('../../constants');
 
-const PaymentGateway = require('../asiabill/PaymentGateway');
+const PaymentGateway = require('../../asiabill/PaymentGateway');
 const {parseVoidRequest} = require('../parser/void');
-const redis = require('../lib/redis');
-const CredentialManager = require('../lib/CredentialManager');
-const {handleError} = require('../lib/ResponseHelper');
+const redis = require('../../lib/redis');
+const CredentialManager = require('../../lib/CredentialManager');
+const {handleError} = require('../../lib/ResponseHelper');
 const {parseOrderManagementResponse} = require('../parser/response');
-const {responseWithSign} = require('../lib/ResponseHelper');
+const {responseWithSign} = require('../../lib/ResponseHelper');
 
 const creManager = new CredentialManager(redis);
 const paymentGateway = new PaymentGateway();

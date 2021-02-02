@@ -1,8 +1,8 @@
 const Joi = require('joi');
-const ShopBaseSigner = require('../lib/Signer');
-const SignInvalidError = require('../errors/SignInvalid');
+const ShopBaseSigner = require('../../lib/Signer');
+const SignInvalidError = require('../../errors/SignInvalid');
 
-const schemaCapturePaymentRequest = Joi.object({
+const schemaVoidPaymentRequest = Joi.object({
   x_account_id: Joi.string().required(),
   x_amount: Joi.number().required(),
   x_currency: Joi.string().max(3).required(),
@@ -17,10 +17,10 @@ const schemaCapturePaymentRequest = Joi.object({
 /**
  * @throws {Joi.ValidationError} will throw when validate fail
  * @param {Express.request} request Object get from request body sent from ShopBase
- * @return {Promise<captureRequest>}
+ * @return {Promise<voidRequest>}
  */
-async function parseCaptureRequest(request) {
-  const value = await schemaCapturePaymentRequest.validateAsync(request.body, {
+async function parseVoidRequest(request) {
+  const value = await schemaVoidPaymentRequest.validateAsync(request.body, {
     allowUnknown: true,
   });
 
@@ -36,4 +36,4 @@ async function parseCaptureRequest(request) {
   };
 }
 
-module.exports = {parseCaptureRequest};
+module.exports = {parseVoidRequest};

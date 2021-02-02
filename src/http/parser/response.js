@@ -1,4 +1,4 @@
-const {RESULT_COMPLETED, RESULT_FAILED} = require('../constants');
+const {RESULT_COMPLETED, RESULT_FAILED} = require('../../constants');
 
 /**
  *

@@ -1,13 +1,13 @@
 const express = require('express');
-const createOrderHandler = require('./src/handler/createOrder');
-const gatewayWebhookHandler = require('./src/handler/gatewayWebhookHandler');
-const gatewayConfirmHandler = require('./src/handler/gatewayConfirmHandler');
-const getTransactionInfoHandler = require('./src/handler/getTransactionHandler');
-const captureHandler = require('./src/handler/captureHandler');
-const voidHandler = require('./src/handler/voidHandler');
-const refundHandler = require('./src/handler/refundHandler');
+const createOrderHandler = require('./src/http/handler/createOrder');
+const gatewayWebhookHandler = require('./src/http/handler/gatewayWebhookHandler');
+const gatewayConfirmHandler = require('./src/http/handler/gatewayConfirmHandler');
+const getTransactionInfoHandler = require('./src/http/handler/getTransactionHandler');
+const captureHandler = require('./src/http/handler/captureHandler');
+const voidHandler = require('./src/http/handler/voidHandler');
+const refundHandler = require('./src/http/handler/refundHandler');
 
-const gatewayCheckCredentialsHandler = require('./src/handler/gatewayCheckCredentialsHandler');
+const gatewayCheckCredentialsHandler = require('./src/http/handler/gatewayCheckCredentialsHandler');
 const router = new express.Router();
 
 router.post('/create-order', createOrderHandler);

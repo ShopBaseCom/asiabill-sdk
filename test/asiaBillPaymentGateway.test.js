@@ -278,7 +278,7 @@ describe('AsianBill create order wrong request should throw error', () => {
   ]);
 
   for (const [request, error] of mapExpect.entries()) {
-    new AsiaBill(credential).getDataCreateOrder(request).catch((err) => {
+    new AsiaBill().getDataCreateOrder(request, credential).catch((err) => {
       expect(err.message).toBe(error);
     });
   }

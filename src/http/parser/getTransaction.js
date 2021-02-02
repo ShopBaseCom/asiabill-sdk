@@ -1,6 +1,6 @@
 const Joi = require('joi');
-const ShopBaseSigner = require('../lib/Signer');
-const SignInvalidError = require('../errors/SignInvalid');
+const ShopBaseSigner = require('../../lib/Signer');
+const SignInvalidError = require('../../errors/SignInvalid');
 
 const schemaGetTransactionRequest = Joi.object({
   x_account_id: Joi.string().required(),

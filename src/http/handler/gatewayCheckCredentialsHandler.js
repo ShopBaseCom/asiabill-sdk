@@ -1,9 +1,9 @@
-const logger = require('../lib/logger');
-const StatusCodes = require('../constants/statusCodes');
+const logger = require('../../lib/logger');
+const StatusCodes = require('../../constants/statusCodes');
 const {parseCheckCredentialsRequest} = require('../parser/checkCredentials');
-const {handleError} = require('../lib/ResponseHelper');
-const PaymentGateway = require('../asiabill/PaymentGateway');
-const {responseWithSign} = require('../lib/ResponseHelper');
+const {handleError} = require('../../lib/ResponseHelper');
+const PaymentGateway = require('../../asiabill/PaymentGateway');
+const {responseWithSign} = require('../../lib/ResponseHelper');
 
 /**
  * @param {Express.request} req

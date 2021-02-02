@@ -1,14 +1,14 @@
-const PaymentGateway = require('../asiabill/PaymentGateway');
-const logger = require('../lib/logger');
-const CredentialManager = require('../lib/CredentialManager');
-const redis = require('../lib/redis');
+const PaymentGateway = require('../../asiabill/PaymentGateway');
+const logger = require('../../lib/logger');
+const CredentialManager = require('../../lib/CredentialManager');
+const redis = require('../../lib/redis');
 const axios = require('axios');
-const ShopBaseSigner = require('../lib/Signer');
+const ShopBaseSigner = require('../../lib/Signer');
 const {parseOrderResponse} = require('../parser/response');
 const {
   StatusCodes,
-} = require('../constants');
-const {handleError} = require('../lib/ResponseHelper');
+} = require('../../constants');
+const {handleError} = require('../../lib/ResponseHelper');
 
 const creManager = new CredentialManager(redis);
 const paymentGateway = new PaymentGateway();

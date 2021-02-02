@@ -1,4 +1,4 @@
-const winston = require('winston');
+import winston from 'winston'
 
 const logger = winston.createLogger({
   transports: [],
@@ -26,4 +26,4 @@ if (!!process.env.LOG_FILE) {
   }));
 }
 
-module.exports = logger.child({label: 'AsiaBill'});
+export default logger.child({label: 'AsiaBill'});

@@ -42,6 +42,11 @@ const ERROR_PAYMENT_NOT_SUPPORTED = 'payment_not_supported';
  * @type {string}
  */
 const ERROR_MISSING_PARAMS = 'missing_param';
+/**
+ * Validation error
+ * @type {string}
+ */
+const ERROR_VALIDATION_ERROR = 'validation_error';
 
 module.exports = {
   ERROR_CARD_DECLINED,
@@ -53,4 +58,5 @@ module.exports = {
   ERROR_ACCOUNT_INVALID,
   ERROR_PAYMENT_NOT_SUPPORTED,
   ERROR_MISSING_PARAMS,
+  ERROR_VALIDATION_ERROR
 };

@@ -276,13 +276,12 @@ class AsiaBillPaymentGateway {
     let errorCode = MAP_ERROR[code];
 
     if (!errorCode) {
-      const [field1, field2, field3] = orderInfo.split(':');
-      if (field3) {
-        message = field3;
-      } else {
-        message = field2;
+      // get error from string
+      const rs = orderInfo.match(/([^:])+:(.*)/);
+      if (rs && rs[1] && rs[2]) {
+        code = rs[1];
+        message = rs[2];
       }
-      code = field1;
     }
 
     if (code === ErrorCodeCustomerCancel) {

@@ -1,11 +1,7 @@
-const {RESULT_COMPLETED, RESULT_FAILED} = require('../../constants');
+import { OrderManagementResponse, OrderResponse } from '../../payment/type';
+import { RESULT_COMPLETED, RESULT_FAILED }        from '../constant/statusTransaction';
 
-/**
- *
- * @param {orderResponse} res
- * @return {*}
- */
-function parseOrderResponse(res) {
+export function parseOrderResponse(res: OrderResponse) {
   return {
     x_account_id: res.accountId,
     x_amount: res.amount,
@@ -21,12 +17,7 @@ function parseOrderResponse(res) {
   };
 }
 
-/**
- *
- * @param {orderManagementResponse} res
- * @return {*}
- */
-function parseOrderManagementResponse(res) {
+export function parseOrderManagementResponse(res: OrderManagementResponse) {
   return {
     x_gateway_reference: res.gatewayReference,
     x_reference: res.reference,
@@ -37,5 +28,3 @@ function parseOrderManagementResponse(res) {
     x_result: res.result,
   };
 }
-
-module.exports = {parseOrderResponse, parseOrderManagementResponse};

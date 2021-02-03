@@ -5,10 +5,10 @@ class UrlObjectNotFound extends Error {
   /**
    * @param {string} message
    */
-  constructor(message) {
+  constructor(message: string) {
     super(message);
     this.name = 'UrlObjectNotFound';
   }
 }
 
-module.exports = UrlObjectNotFound;
+export default UrlObjectNotFound;

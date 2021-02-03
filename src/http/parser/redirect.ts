@@ -1,8 +1,10 @@
-const Joi = require('joi');
-const ShopBaseSigner = require('../../lib/Signer');
-const SignInvalidError = require('../../errors/SignInvalid');
+import { OrderRequest }     from '../../payment/type';
+import Joi                  from 'joi';
+import ShopBaseSigner       from '../../lib/Signer';
+import { SignInvalidError } from '../../payment/error';
 
-const schemaRedirectRequest = Joi.object({
+
+export const schemaRedirectRequest = Joi.object({
   x_account_id: Joi.string().required(),
   x_amount: Joi.number().required(),
   x_currency: Joi.string().max(3).required(),
@@ -38,13 +40,7 @@ const schemaRedirectRequest = Joi.object({
   x_signature: Joi.string(),
 });
 
-/**
- *
- * @throws {Joi.ValidationError} will throw when validate fail
- * @param  {Object} request Object get from body request any thing from ShopBase
- * @return {Promise<orderRequest>}
- */
-async function parseOrderRequest(request) {
+export async function parseOrderRequest(request: any): Promise<OrderRequest> {
   const value = await schemaRedirectRequest.validateAsync(request);
 
   if (!ShopBaseSigner.verify(request, value['x_signature'])) {
@@ -86,25 +82,3 @@ async function parseOrderRequest(request) {
     isPostPurchase: value['x_post_purchase'],
   };
 }
-
-/**
- *
- * @param {orderResponse} res
- * @return {*}
- */
-function parseOrderResponse(res) {
-  return {
-    x_account_id: res.accountId,
-    x_amount: res.amount,
-    x_currency: res.currency,
-    x_gateway_reference: res.gatewayReference,
-    x_reference: res.reference,
-    x_transaction_type: res.transactionType,
-    x_test: res.isTest,
-    x_timestamp: res.timestamp,
-    x_message: res.errorMessage,
-    x_error_code: res.errorCode,
-  };
-}
-
-module.exports = {parseOrderRequest, parseOrderResponse};

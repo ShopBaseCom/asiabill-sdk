@@ -4,12 +4,17 @@
  * Because any request from ShopBase to provider should handler by
  * payment provider ( not payment gateway )
  */
+import { RedisClient } from 'redis';
+import { UrlObject }   from '../payment/type';
+
 class UrlManager {
+  private redis: any;
+
   /**
    *
    * @param {Storage} storage
    */
-  constructor(storage) {
+  constructor(storage: RedisClient) {
     this.redis = storage;
   }
 
@@ -22,9 +27,9 @@ class UrlManager {
    * @param {urlObject} url
    * @return {Promise<urlObject>}
    */
-  async getProxyUrlObject(ref, isPortPurchase, url) {
+  async getProxyUrlObject(ref: string, isPortPurchase: boolean, url: UrlObject): Promise<UrlObject> {
     await this.redis.set(this.getCacheKeyByOrderNo(ref, isPortPurchase),
-        JSON.stringify(url));
+      JSON.stringify(url));
 
     this.redis.expire(this.getCacheKeyByOrderNo(ref, isPortPurchase), 60 * 60 * 24 * 30);
 
@@ -43,9 +48,9 @@ class UrlManager {
    * @param {boolean} isPortPurchase
    * @return {Promise<urlObject>}
    */
-  getUrlObject(ref, isPortPurchase) {
+  getUrlObject(ref: string, isPortPurchase: boolean): Promise<UrlObject> {
     const key = this.getCacheKeyByOrderNo(ref, isPortPurchase);
-    return this.redis.get(key).then((rs) => {
+    return this.redis.get(key).then((rs: string) => {
       if (rs == null) {
         throw new Error(`cannot get url object with ref ${ref}`);
       }
@@ -59,9 +64,9 @@ class UrlManager {
    * @param {boolean} isPortPurchase
    * @return {string}
    */
-  getCacheKeyByOrderNo(ref, isPortPurchase) {
+  getCacheKeyByOrderNo(ref: string, isPortPurchase: boolean) {
     return `${process.env.CACHE_KEY_URL}/${ref}-${isPortPurchase}`;
   }
 }
 
-module.exports = UrlManager;
+export default UrlManager;

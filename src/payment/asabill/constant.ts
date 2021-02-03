@@ -5,12 +5,12 @@ import {
   ERROR_CALLER_ISSUER,
   ERROR_PROCESSING_ERROR,
   ERROR_PAYMENT_NOT_SUPPORTED,
-} from '../../constant/errorCode'
+} from '../../http/constant/errorCode'
 
 export const PAYMENT_METHOD = 'Credit Card';
 export const INTERFACE_INFO = 'ShopBase';
 
-export const MAP_ERROR = {
+export const MAP_ERROR: Record<string, string> = {
   I0001: ERROR_ACCOUNT_INVALID, // IMerchant Number cannot be empty!
   I0002: ERROR_ACCOUNT_INVALID, // Gateway Number cannot empty!
   I0003: ERROR_ACCOUNT_INVALID, // Gateway of Merchant Number cannot be empty
@@ -184,7 +184,8 @@ export const TRANSACTION_STATUS = {
   QUERY_SYSTEM_ERROR: 999,
 };
 
-export const TRANSACTION_TYPES = {
+export type TypeTransaction = number
+export const TRANSACTION_TYPES: Record<string, TypeTransaction> = {
   CAPTURE: 1,
   VOID: 2,
 };

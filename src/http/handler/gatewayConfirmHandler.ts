@@ -1,35 +1,27 @@
-const Joi = require('joi');
-
-// should using factory return interface
-const PaymentGateway = require('../../asiabill/PaymentGateway');
-
-const redis = require('../../lib/redis');
-const CredentialManager = require('../../lib/CredentialManager');
-const UrlManager = require('../../lib/UrlManager');
-const logger = require('../../lib/logger');
-const StatusCodes = require('../../constants/statusCodes');
-const SignInvalidError = require('../../errors/SignInvalid');
-const InvalidAccountError = require('../../errors/InvalidAccountError');
-const ShopBaseSystemError = require('../../errors/ShopBaseSystemError');
-const {parseOrderResponse} = require('../parser/response');
-const {redirectWithSignRequestToShopBase} = require('../../lib/ResponseHelper');
-const {
-  ERROR_PROCESSING_ERROR,
-  ERROR_INVALID_SIGNATURE,
-  ERROR_MISSING_PARAMS,
-  RESULT_FAILED,
-} = require('../../constants');
+import Joi                                                            from 'joi';
+import { Request, Response }                                          from 'express';
+import redis                                                          from '../../lib/redis';
+import logger                                                         from '../../lib/logger';
+import { parseOrderResponse }                                         from '../parser/response';
+import { InvalidAccountError, ShopBaseSystemError, SignInvalidError } from '../../payment/error';
+import * as errorCode                                                 from '../constant/errorCode';
+import UrlManager                                                     from '../../lib/UrlManager';
+import StatusCodes                                                    from '../constant/statusCodes';
+import { redirectWithSignRequestToShopBase }                          from '../../lib/ResponseHelper';
+import CredentialManager                                              from '../../lib/CredentialManager';
+import { RESULT_FAILED }                                              from '../constant/statusTransaction';
+import { makePaymentGateway }                                         from '../../payment/FactoryPaymentGateway';
 
 const creManager = new CredentialManager(redis);
 const urlManager = new UrlManager(redis);
-const paymentGateway = new PaymentGateway();
+const paymentGateway = makePaymentGateway();
 
 /**
  * @param {Express.request} req
  * @param {Express.response} res
  * @return {Promise<*>}
  */
-async function gatewayConfirmHandler(req, res) {
+async function gatewayConfirmHandler(req: Request, res: Response) {
   let ref;
   let isPostPurchase;
   let urlObject;
@@ -40,18 +32,13 @@ async function gatewayConfirmHandler(req, res) {
     urlObject = await urlManager.getUrlObject(ref, isPostPurchase);
     const accountId = paymentGateway.getAccountIdFromResponseGateway(req.body);
     const credential = await creManager.getById(accountId);
-    const orderResponse = await paymentGateway.getOrderResponse(req.body,
-        credential);
+    const orderResponse = await paymentGateway.getOrderResponse(req.body, credential);
 
     if (orderResponse.isCancel) {
       return res.redirect(urlObject.cancelUrl);
     }
 
-    return redirectWithSignRequestToShopBase(
-        res,
-        urlObject.returnUrl,
-        parseOrderResponse(orderResponse),
-    );
+    return redirectWithSignRequestToShopBase(res, urlObject.returnUrl, parseOrderResponse(orderResponse));
   } catch (e) {
     if (!urlObject) {
       // system error cannot get url object -> block checkout buyer urgent
@@ -62,7 +49,7 @@ async function gatewayConfirmHandler(req, res) {
       return redirectWithSignRequestToShopBase(res, urlObject.returnUrl, {
         x_result: RESULT_FAILED,
         x_message: e.message,
-        x_error_code: ERROR_MISSING_PARAMS,
+        x_error_code: errorCode.ERROR_MISSING_PARAMS,
       });
     }
 
@@ -71,7 +58,7 @@ async function gatewayConfirmHandler(req, res) {
       return redirectWithSignRequestToShopBase(res, urlObject.returnUrl, {
         x_result: RESULT_FAILED,
         x_message: e.message,
-        x_error_code: ERROR_INVALID_SIGNATURE,
+        x_error_code: errorCode.ERROR_INVALID_SIGNATURE,
       });
     }
 
@@ -79,7 +66,7 @@ async function gatewayConfirmHandler(req, res) {
       return redirectWithSignRequestToShopBase(res, urlObject.returnUrl, {
         x_result: RESULT_FAILED,
         x_message: e.message,
-        x_error_code: ERROR_MISSING_PARAMS,
+        x_error_code: errorCode.ERROR_MISSING_PARAMS,
       });
     }
 
@@ -87,7 +74,7 @@ async function gatewayConfirmHandler(req, res) {
       return redirectWithSignRequestToShopBase(res, urlObject.returnUrl, {
         x_result: RESULT_FAILED,
         x_message: e.message,
-        x_error_code: ERROR_PROCESSING_ERROR,
+        x_error_code: errorCode.ERROR_PROCESSING_ERROR,
       });
     }
 
@@ -96,9 +83,9 @@ async function gatewayConfirmHandler(req, res) {
     return redirectWithSignRequestToShopBase(res, urlObject.returnUrl, {
       x_result: RESULT_FAILED,
       x_message: e.message,
-      x_error_code: ERROR_PROCESSING_ERROR,
+      x_error_code: errorCode.ERROR_PROCESSING_ERROR,
     });
   }
 }
 
-module.exports = gatewayConfirmHandler;
+export default gatewayConfirmHandler;

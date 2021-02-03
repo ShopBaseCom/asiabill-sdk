@@ -1,9 +1,11 @@
+import { Request, Response } from 'express';
+
 const {
   StatusCodes,
 } = require('../../constants');
 
 const PaymentGateway = require('../../asiabill/PaymentGateway');
-const {parseCaptureRequest} = require('../parser/capture');
+const {parseRefundRequest} = require('../parser/refund');
 const redis = require('../../lib/redis');
 const CredentialManager = require('../../lib/CredentialManager');
 const {handleError} = require('../../lib/ResponseHelper');
@@ -12,17 +14,18 @@ const {responseWithSign} = require('../../lib/ResponseHelper');
 
 const creManager = new CredentialManager(redis);
 const paymentGateway = new PaymentGateway();
+
 /**
  * @param {Express.request} req
  * @param {Express.response} res
  * @return {Promise<*>}
  */
-async function captureHandler(req, res) {
+async function refundHandler(req: Request, res: Response) {
   try {
-    const captureReq = await parseCaptureRequest(req);
-    const credential = await creManager.getById(captureReq.accountId);
+    const refundReq = parseRefundRequest(req);
+    const credential = await creManager.getById(refundReq.accountId);
 
-    const response = await paymentGateway.capture(captureReq, credential);
+    const response = await paymentGateway.refund(refundReq, credential);
 
     return responseWithSign(res, StatusCodes.OK, parseOrderManagementResponse(response));
   } catch (e) {
@@ -30,4 +33,4 @@ async function captureHandler(req, res) {
   }
 }
 
-module.exports = captureHandler;
+export default refundHandler;

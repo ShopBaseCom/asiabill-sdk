@@ -1,3 +1,5 @@
+import { Request, Response } from 'express';
+
 const {
   StatusCodes,
 } = require('../../constants');
@@ -18,7 +20,7 @@ const paymentGateway = new PaymentGateway();
  * @param {Express.response} res
  * @return {Promise<*>}
  */
-async function getTransactionHandler(req, res) {
+async function getTransactionHandler(req: Request, res: Response) {
   try {
     const getTransactionReq = await parseGetTransactionRequest(req.query);
     const credential = await creManager.getById(getTransactionReq.accountId);
@@ -31,4 +33,4 @@ async function getTransactionHandler(req, res) {
   }
 }
 
-module.exports = getTransactionHandler;
+export default getTransactionHandler;

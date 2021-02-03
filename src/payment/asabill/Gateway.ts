@@ -1,21 +1,38 @@
+import * as Joi                                            from 'joi';
+import SignHelper                                          from './signHelper';
+import Axios                                               from '../../lib/Axios';
+import redis                                               from '../../lib/redis';
+import logger                                              from '../../lib/logger';
+import { ERROR_CARD_DECLINED, ERROR_PROCESSING_ERROR }     from '../../http/constant/errorCode';
+import { TRANSACTION_TYPE_AUTHORIZATION }                  from '../../http/constant/transactionType';
+import { RESULT_INVALID, RESULT_RESTRICTED, RESULT_VALID } from '../../http/constant/statusCredential';
+import { RESULT_COMPLETED, RESULT_FAILED }                 from '../../http/constant/statusTransaction';
 import {
-  Credential, OrderManagementResponse, OrderRequest, OrderResponse, PaymentGateway, RedirectRequest
-}                                                      from '../type';
+  Credential,
+  OrderManagementRequest,
+  OrderManagementResponse,
+  OrderRequest,
+  OrderResponse,
+  PaymentGateway,
+  RedirectRequest,
+  ValidateCredentialResponse
+}                                                          from '../type';
 import {
-  schemaCaptureOrVoidResponse, schemaCaptureRequest, schemaCredential, schemaOrderRequest, schemaOrderResponse
-}                                                      from './validate';
+  schemaCaptureOrVoidResponse,
+  schemaCaptureRequest,
+  schemaCredential,
+  schemaOrderRequest,
+  schemaOrderResponse,
+  schemaVoidRequest
+}                                                          from './validate';
 import {
-  ErrorCodeCustomerCancel, INTERFACE_INFO, MAP_ERROR, PAYMENT_METHOD, TRANSACTION_STATUS, TRANSACTION_TYPES
-}                                                      from './constant';
-import { RESULT_COMPLETED, RESULT_FAILED }             from '../../constant/statusTransaction.ts'
-import SignHelper                                      from './signHelper';
-import * as Joi                                        from 'joi';
-import { ERROR_CARD_DECLINED, ERROR_PROCESSING_ERROR } from '../../constant/errorCode';
-import { TRANSACTION_TYPE_AUTHORIZATION }              from '../../constant/transactionType';
-import logger                                          from '../../lib/logger';
-import redis                                           from '../../lib/redis';
-import Axios                                           from '../../lib/Axios';
-
+  ErrorCodeCustomerCancel,
+  INTERFACE_INFO,
+  MAP_ERROR,
+  PAYMENT_METHOD,
+  TRANSACTION_STATUS,
+  TRANSACTION_TYPES, TypeTransaction
+}                                                          from './constant';
 
 export default class AsiaBillGateway implements PaymentGateway {
 
@@ -103,8 +120,8 @@ export default class AsiaBillGateway implements PaymentGateway {
     }
 
     let orderResValid = result.value
-    let errorCode;
-    let errorMessage;
+    let errorCode = '';
+    let errorMessage = '';
 
     if (orderResValid.orderStatus === TRANSACTION_STATUS.FAILURE) {
       const result = AsiaBillGateway.getErrorCodeAndMessage(
@@ -183,17 +200,93 @@ export default class AsiaBillGateway implements PaymentGateway {
     return body['remark'];
   }
 
-  public async capture(captureRequest, credential): Promise<OrderManagementResponse> {
+  public async capture(captureRequest: OrderManagementRequest, credential: Credential): Promise<OrderManagementResponse> {
     const captureReqValid = await schemaCaptureRequest.validateAsync(
       captureRequest, {
         allowUnknown: true,
       },
     );
 
-    return this.captureOrVoid(captureReqValid, credential, TRANSACTION_TYPES.CAPTURE);
+    return AsiaBillGateway.captureOrVoid(captureReqValid, credential, TRANSACTION_TYPES.CAPTURE);
   }
 
-  private async captureOrVoid(captureOrVoidRequest, credential, authType) {
+  public async void(voidRequest: OrderManagementRequest, credential: Credential): Promise<OrderManagementResponse> {
+    const voidReqValid = await schemaVoidRequest.validateAsync(
+      voidRequest, {
+        allowUnknown: true,
+      },
+    );
+
+    return AsiaBillGateway.captureOrVoid(voidReqValid, credential, TRANSACTION_TYPES.VOID);
+  }
+
+  async validateCredential(credential: Credential): Promise<ValidateCredentialResponse> {
+    await schemaCredential.validateAsync(credential, {
+      allowUnknown: true,
+    });
+
+    const requestPayload = {
+      merNo: credential.merNo,
+      gatewayNo: credential.gatewayNo,
+      orderNo: '999999999999',
+      signInfo: SignHelper.sign(
+        [
+          credential.merNo,
+          credential.gatewayNo,
+          credential.signKey,
+        ],
+      )
+    };
+
+    const url = (credential.sandbox ?
+      process.env.ASIABILL_RETRIEVE_URL_TEST_MODE :
+      process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE) || '';
+
+    const response = await Axios.getInstance().post(url, requestPayload);
+
+    if (response.status > 201) {
+      // Some errors occurred
+      throw new Error('Some errors occurred. detail: ' + response.statusText);
+    }
+
+    // Just status MERCHANT_GATEWAY_ACCESS_ERROR is invalid account
+    const restrictedStatus = [TRANSACTION_STATUS.MERCHANT_GATEWAY_ACCESS_ERROR];
+    const validStatus = [
+      TRANSACTION_STATUS.TO_BE_CONFIRMED,
+      TRANSACTION_STATUS.PENDING,
+      TRANSACTION_STATUS.FAILURE,
+      TRANSACTION_STATUS.SUCCESS,
+      TRANSACTION_STATUS.ORDER_DOES_NOT_EXIST,
+    ];
+    const errorStatus = [
+      TRANSACTION_STATUS.ACCESS_IP_ERROR,
+      TRANSACTION_STATUS.QUERY_SYSTEM_ERROR];
+
+    const tradeInfo = response.data.response.tradeinfo;
+
+    if (errorStatus.includes(tradeInfo.queryResult)) {
+      throw new Error('Some errors occurred. detail: ' + response.statusText);
+    }
+
+    const queryResult = parseInt(tradeInfo.queryResult);
+    if (validStatus.includes(queryResult)) {
+      return {
+        status: RESULT_VALID,
+      };
+    }
+
+    if (restrictedStatus.includes(queryResult)) {
+      return {
+        status: RESULT_RESTRICTED,
+      };
+    }
+
+    return {
+      status: RESULT_INVALID,
+    };
+  }
+
+  private static async captureOrVoid(captureOrVoidRequest: OrderManagementRequest, credential: Credential, authType: TypeTransaction): Promise<OrderManagementResponse> {
     const requestPayload = {
       merNo: credential.merNo,
       gatewayNo: credential.gatewayNo,
@@ -216,7 +309,7 @@ export default class AsiaBillGateway implements PaymentGateway {
       process.env.ASIABILL_CAPTURE_VOID_URL_TEST_MODE :
       process.env.ASIABILL_CAPTURE_VOID_URL_LIVE_MODE;
 
-    const response = await Axios.getInstance().post(url, requestPayload);
+    const response = await Axios.getInstance().post(url as string, requestPayload);
     const captureOrVoidRes = await schemaCaptureOrVoidResponse.validateAsync(
       response.data,
       {
@@ -228,8 +321,8 @@ export default class AsiaBillGateway implements PaymentGateway {
     TRANSACTION_STATUS.SUCCESS ?
       RESULT_COMPLETED : RESULT_FAILED;
 
-    let errorCode;
-    let errorMessage;
+    let errorCode = '';
+    let errorMessage = '';
 
     if (result === RESULT_FAILED) {
       const errResult = AsiaBillGateway.getErrorCodeAndMessage(
@@ -253,15 +346,15 @@ export default class AsiaBillGateway implements PaymentGateway {
     return '_1';
   }
 
-  private static getUrlApi(credential: Credential) {
+  private static getUrlApi(credential: Credential): string {
     if (credential.sandbox) {
-      return process.env.ASIABILL_URL_TEST_MODE;
+      return process.env.ASIABILL_URL_TEST_MODE || '';
     }
 
-    return process.env.ASIABILL_URL_LIVE_MODE;
+    return process.env.ASIABILL_URL_LIVE_MODE || '';
   }
 
-  private static getErrorCodeAndMessage(orderInfo) {
+  private static getErrorCodeAndMessage(orderInfo: string) {
     // special case not have in document but work in test mode
     if (orderInfo === 'Decline') {
       return {
@@ -298,5 +391,74 @@ export default class AsiaBillGateway implements PaymentGateway {
 
   private static getCacheKeyTranNo(ref: string): string {
     return `${process.env.ASIABILL_CACHE_KEY_TRANO}/${ref}`;
+  }
+
+  async getOrderResponseFromWebhook(body: object, credential: Credential): Promise<OrderResponse> {
+    const creResValid = schemaCredential.validate(credential, {
+      allowUnknown: true,
+    });
+    if (creResValid.error) {
+      throw creResValid.error;
+    }
+    const webhookResValid = await schemaWebhookResponse.validateAsync(
+      body, {
+        allowUnknown: true,
+      },
+    );
+
+    const signInfo = sign([
+      credential.merNo,
+      credential.gatewayNo,
+      webhookResValid.tradeNo,
+      webhookResValid.orderNo,
+      webhookResValid.orderCurrency,
+      webhookResValid.orderAmount,
+      webhookResValid.orderStatus,
+      webhookResValid.orderInfo,
+      credential.signKey,
+    ]);
+
+    if (signInfo.toUpperCase() !== webhookResValid.signInfo) {
+      throw new SignInvalidError('sign invalid');
+    }
+
+    if (webhookResValid.notifyType !== NOTIFY_TYPES.PaymentResult) {
+      throw new NotifyTypeNotSupportError('notify type not supported');
+    }
+
+    let errorCode;
+    let errorMessage;
+
+    if (webhookResValid.orderStatus === TRANSACTION_STATUS.FAILURE) {
+      const result = this.getErrorCodeAndMessage(
+        webhookResValid.orderInfo,
+      );
+
+      if (result.errorCode === ERROR_PROCESSING_ERROR) {
+        logger.info('debug error', webhookResValid);
+      }
+
+      errorCode = result.errorCode;
+      errorMessage = result.errorMessage;
+    }
+
+    await redis.set(this.getCacheKeyTranNo(webhookResValid.tradeNo),
+      webhookResValid.orderNo);
+
+    return {
+      errorCode,
+      errorMessage,
+      accountId: this.getAccountIdFromResponseGateway(webhookResValid),
+      reference: this.getRefFromResponseGateway(webhookResValid),
+      currency: webhookResValid.orderCurrency,
+      amount: webhookResValid.orderAmount,
+      gatewayReference: webhookResValid.tradeNo,
+      isPostPurchase: this.isPostPurchase(webhookResValid),
+      isSuccess: [TRANSACTION_STATUS.PENDING].includes(webhookResValid.orderStatus),
+      isTest: credential.sandbox,
+      timestamp: new Date().toISOString(),
+      isCancel: false,
+      transactionType: TRANSACTION_TYPE_AUTHORIZATION,
+    };
   }
 }

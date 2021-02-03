@@ -5,10 +5,10 @@ class InvalidAccountError extends Error {
   /**
    * @param {string} message
    */
-  constructor(message) {
+  constructor(message: string) {
     super(message);
     this.name = 'InvalidAccountError';
   }
 }
 
-module.exports = InvalidAccountError;
+export default InvalidAccountError;

@@ -60,21 +60,55 @@ export type RedirectRequest = {
   url: string
 }
 
+export type OrderManagementRequest = {
+  accountId: string
+  reference: string
+  gatewayReference: string
+  transactionType: string
+}
+
+export type CheckCredentialsRequest = {
+  shopId: number
+  gatewayCredentials: any
+}
+
+export type ValidateCredentialResponse = {
+  status: StatusCheckCredential
+}
+
+export type RefundRequest = {
+  accountId: string
+  reference: string
+  gatewayReference: string
+  transactionType: string
+  amount: number
+  currency: string
+  refundReason: string
+}
+
 // ShopBase Credential always has an isTestMode field that is a bool. All remaining fields are string
 export type Credential = Record<string, string | boolean>
+export type StatusCheckCredential = string
+export type StatusTransaction = string
 
 export interface PaymentGateway {
 
   getDataCreateOrder(orderRequest: OrderRequest, credential: Credential): RedirectRequest
 
-  getOrderResponse(body: any, credential: Credential): OrderResponse
+  getOrderResponse(body: object, credential: Credential): OrderResponse
 
-  isPostPurchase(body: any): boolean
+  isPostPurchase(body: object): boolean
 
-  getRefFromResponseGateway(body: any): string
+  getRefFromResponseGateway(body: object): string
 
-  getAccountIdFromResponseGateway(body: any): number
+  getAccountIdFromResponseGateway(body: object): number
 
-  capture(captureRequest, credential): Promise<OrderManagementResponse>
+  validateCredential(credential: Credential): Promise<ValidateCredentialResponse>
+
+  capture(captureRequest: OrderManagementRequest, credential: Credential): Promise<OrderManagementResponse>
+
+  void(voidRequest: OrderManagementRequest, credential: Credential): Promise<OrderManagementResponse>
+
+  getOrderResponseFromWebhook(body: object, credential: Credential): Promise<OrderResponse>
 
 }

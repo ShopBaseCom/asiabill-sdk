@@ -1,8 +1,9 @@
-const redis = require('redis');
-const {promisify} = require('util');
-const client = redis.createClient(process.env.REDIS);
+import redis         from 'redis'
+import { promisify } from 'util'
 
-client.get = promisify(client.get).bind(client);
-client.set = promisify(client.set).bind(client);
+const client = redis.createClient(process.env.REDIS as any);
+
+client.get = promisify(client.get).bind(client) as any;
+client.set = promisify(client.set).bind(client) as any;
 
 export default client;

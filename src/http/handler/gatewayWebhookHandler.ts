@@ -1,23 +1,23 @@
-const PaymentGateway = require('../../asiabill/PaymentGateway');
-const logger = require('../../lib/logger');
-const CredentialManager = require('../../lib/CredentialManager');
-const redis = require('../../lib/redis');
-const axios = require('axios');
-const ShopBaseSigner = require('../../lib/Signer');
-const {parseOrderResponse} = require('../parser/response');
-const {
-  StatusCodes,
-} = require('../../constants');
-const {handleError} = require('../../lib/ResponseHelper');
+import { Request, Response }  from 'express';
+import logger                 from '../../lib/logger';
+import CredentialManager      from '../../lib/CredentialManager';
+import redis                  from '../../lib/redis';
+import { makePaymentGateway } from '../../payment/FactoryPaymentGateway';
+import { parseOrderResponse } from '../parser/response';
+import axios                  from 'axios';
+import ShopBaseSigner         from '../../lib/Signer';
+import StatusCodes            from '../constant/statusCodes';
+import { handleError }        from '../../lib/ResponseHelper';
+
 
 const creManager = new CredentialManager(redis);
-const paymentGateway = new PaymentGateway();
+const paymentGateway = makePaymentGateway();
 /**
  * @param {Express.request} req
  * @param {Express.response} res
  * @return {Promise<*>}
  */
-async function gatewayWebhookHandler(req, res) {
+async function gatewayWebhookHandler(req: Request, res: Response) {
   try {
     logger.info('[webhook] Received webhook: ', req.body);
     const accountId = paymentGateway.getAccountIdFromResponseGateway(req.body);
@@ -39,4 +39,4 @@ async function gatewayWebhookHandler(req, res) {
   return null;
 }
 
-module.exports = gatewayWebhookHandler;
+export default gatewayWebhookHandler;

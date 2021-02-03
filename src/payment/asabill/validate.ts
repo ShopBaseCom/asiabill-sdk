@@ -1,4 +1,5 @@
-import * as Joi from 'joi';
+import * as Joi                   from 'joi';
+import { OrderManagementRequest } from '../type';
 
 export const schemaAddress = Joi.object({
   phone: Joi.string().max(50).optional(),
@@ -79,4 +80,29 @@ export const schemaCredential = Joi.object({
   merNo: Joi.string().max(5).required(),
   gatewayNo: Joi.string().max(8).required(),
   signKey: Joi.string().max(100).required(),
+});
+
+export const schemaOrderManagementRequest = Joi.object({
+  x_account_id: Joi.string().required(),
+  x_amount: Joi.number().required(),
+  x_currency: Joi.string().max(3).required(),
+  x_reference: Joi.string().required(),
+  x_test: Joi.bool().required(),
+  x_gateway_reference: Joi.string().required(),
+  x_transaction_type: Joi.string().required(),
+  x_invoice: Joi.string(),
+  x_url_callback: Joi.string().required(),
+});
+
+export const schemaRefundPaymentRequest = Joi.object({
+  x_account_id: Joi.string().required(),
+  x_amount: Joi.number().required(),
+  x_currency: Joi.string().max(3).required(),
+  x_reference: Joi.string().required(),
+  x_test: Joi.bool().required(),
+  x_gateway_reference: Joi.string().required(),
+  x_transaction_type: Joi.string().required(),
+  x_invoice: Joi.string(),
+  x_url_callback: Joi.string().required(),
+  x_refund_reason: Joi.string().required(),
 });

@@ -5,10 +5,10 @@ class ShopBaseSystemError extends Error {
   /**
    * @param {string} message
    */
-  constructor(message) {
+  constructor(message: string) {
     super(message);
     this.name = 'ShopBaseSystemError';
   }
 }
 
-module.exports = ShopBaseSystemError;
+export default ShopBaseSystemError;

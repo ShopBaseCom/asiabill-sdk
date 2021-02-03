@@ -8,7 +8,7 @@ import voidHandler                    from './src/http/handler/voidHandler';
 import refundHandler                  from './src/http/handler/refundHandler';
 import getTransactionHandler          from './src/http/handler/getTransactionHandler';
 
-const router = new express.Router();
+const router = express.Router();
 
 router.post('/create-order', createOrder);
 

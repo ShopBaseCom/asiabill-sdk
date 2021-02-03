@@ -1,30 +1,21 @@
-import { Request, Response } from 'express';
-
-const {
-  StatusCodes,
-} = require('../../constants');
-
-const PaymentGateway = require('../../asiabill/PaymentGateway');
-const {parseVoidRequest} = require('../parser/void');
-const redis = require('../../lib/redis');
-const CredentialManager = require('../../lib/CredentialManager');
-const {handleError} = require('../../lib/ResponseHelper');
-const {parseOrderManagementResponse} = require('../parser/response');
-const {responseWithSign} = require('../../lib/ResponseHelper');
+import { Request, Response }             from 'express';
+import CredentialManager                 from '../../lib/CredentialManager';
+import redis                             from '../../lib/redis';
+import { makePaymentGateway }            from '../../payment/FactoryPaymentGateway';
+import { parseVoidRequest }              from '../parser/void';
+import StatusCodes                       from '../constant/statusCodes';
+import { parseOrderManagementResponse }  from '../parser/response';
+import { handleError, responseWithSign } from '../../lib/ResponseHelper';
+import { schemaVoidRequest }             from '../../payment/validate';
 
 const creManager = new CredentialManager(redis);
-const paymentGateway = new PaymentGateway();
+const paymentGateway = makePaymentGateway();
 
-/**
- * @param {Express.request} req
- * @param {Express.response} res
- * @return {Promise<*>}
- */
 async function voidHandler(req: Request, res: Response) {
   try {
     const voidReq = await parseVoidRequest(req);
     const credential = await creManager.getById(voidReq.accountId);
-
+    await schemaVoidRequest.validateAsync(voidReq, {allowUnknown: true});
     const response = await paymentGateway.void(voidReq, credential);
 
     return responseWithSign(res, StatusCodes.OK, parseOrderManagementResponse(response));

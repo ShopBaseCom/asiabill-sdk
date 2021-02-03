@@ -12,6 +12,7 @@ import { handleError }        from '../../lib/ResponseHelper';
 
 const creManager = new CredentialManager(redis);
 const paymentGateway = makePaymentGateway();
+
 /**
  * @param {Express.request} req
  * @param {Express.response} res
@@ -25,7 +26,7 @@ async function gatewayWebhookHandler(req: Request, res: Response) {
     const orderResponse = await paymentGateway.getOrderResponseFromWebhook(req.body, credential);
 
     const parsedOrderResponse = parseOrderResponse(orderResponse);
-    const response = await axios.post(process.env.SHOPBASE_CALLBACK_URL, parsedOrderResponse, {
+    const response = await axios.post(process.env.SHOPBASE_CALLBACK_URL || '', parsedOrderResponse, {
       headers: {
         'X-Signature': ShopBaseSigner.getSignature(parsedOrderResponse),
       },

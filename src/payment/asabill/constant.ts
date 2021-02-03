@@ -138,7 +138,7 @@ export const MAP_ERROR: Record<string, string> = {
   A0010: ERROR_PROCESSING_ERROR, // Remarks cannot exceed 100 characters,
 };
 
-export const MAP_REFUND_ERROR = {
+export const MAP_REFUND_ERROR: Record<string, string> = {
   '01': ERROR_CALLER_ISSUER, // Incorrect parameter transmission
   '03': ERROR_CALLER_ISSUER, // Incorrect registered IP address
   '04': ERROR_CALLER_ISSUER, // Insufficient parameter transmission

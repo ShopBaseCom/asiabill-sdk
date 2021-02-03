@@ -1,7 +1,7 @@
-import { OrderRequest }     from '../../payment/type';
-import Joi                  from 'joi';
-import ShopBaseSigner       from '../../lib/Signer';
-import { SignInvalidError } from '../../payment/error';
+import { OrderRequest }       from '../../payment/type';
+import Joi                    from 'joi';
+import ShopBaseSigner         from '../../lib/Signer';
+import { SignInvalidError }   from '../../payment/error';
 
 
 export const schemaRedirectRequest = Joi.object({

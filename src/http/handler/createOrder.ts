@@ -10,7 +10,8 @@ import * as errors                           from '../../payment/error';
 import { redirectWithSignRequestToShopBase } from '../../lib/ResponseHelper';
 import UrlManager                            from '../../lib/UrlManager';
 import StatusCodes                           from '../constant/statusCodes';
-import { parseOrderRequest }                 from '../parser/redirect';
+import { parseOrderRequest }  from '../parser/redirect';
+import { schemaOrderRequest } from '../../payment/validate';
 
 const creManager = new CredentialManager(redis);
 const urlManager = new UrlManager(redis);
@@ -25,8 +26,8 @@ export default async function createOrder(req: Request, res: Response) {
     );
     logger.info('url object', orderReq.urlObject);
     logger.info(process.env.HOST);
-    const createOrder = await paymentGateway.getDataCreateOrder(orderReq, credential);
-    return res.render('redirect', createOrder);
+    await schemaOrderRequest.validate(orderReq, {allowUnknown: true})
+    return res.render('redirect', await paymentGateway.getRequestCreateOrder(orderReq, credential));
   } catch (e) {
     if (!req.body || !req.body['x_url_complete']) {
       logger.error(e);

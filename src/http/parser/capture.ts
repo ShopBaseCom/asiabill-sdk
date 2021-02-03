@@ -1,10 +1,11 @@
 import ShopBaseSigner                   from '../../lib/Signer';
 import { OrderManagementRequest }       from '../../payment/type';
 import { SignInvalidError }             from '../../payment/error';
-import { schemaOrderManagementRequest } from '../../payment/asabill/validate';
+import { Request }                      from 'express';
+import { schemaOrderManagementRequest } from '../../payment/validate';
 
-export function parseCaptureRequest(request): OrderManagementRequest {
-  const {value, error} = schemaOrderManagementRequest.validate(request.body, {
+export function parseCaptureRequest(request: Request): OrderManagementRequest {
+  const {value, error} = schemaOrderManagementRequest.validate(request.body as object, {
     allowUnknown: true,
   });
 

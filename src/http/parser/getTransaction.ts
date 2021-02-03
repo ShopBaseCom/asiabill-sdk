@@ -1,3 +1,5 @@
+import { OrderManagementRequest } from '../../payment/type';
+
 const Joi = require('joi');
 const ShopBaseSigner = require('../../lib/Signer');
 const SignInvalidError = require('../../errors/SignInvalid');
@@ -11,16 +13,13 @@ const schemaGetTransactionRequest = Joi.object({
   x_signature: Joi.string().required(),
 });
 
-/**
- *
- * @throws {Joi.ValidationError} will throw when validate fail
- * @param  {Object} request Object get from query params sent from ShopBase
- * @return {Promise<getTransactionRequest>}
- */
-async function parseGetTransactionRequest(request) {
-  const value = await schemaGetTransactionRequest.validateAsync(request, {
+export function parseGetTransactionRequest(request: object): OrderManagementRequest {
+  const {value, error} = schemaGetTransactionRequest.validate(request, {
     allowUnknown: true,
   });
+  if (error) {
+    throw error
+  }
   if (!ShopBaseSigner.verify(request, value['x_signature'])) {
     throw new SignInvalidError('signature invalid');
   }
@@ -32,5 +31,3 @@ async function parseGetTransactionRequest(request) {
     gatewayReference: value['x_gateway_reference'],
   };
 }
-
-module.exports = {parseGetTransactionRequest};

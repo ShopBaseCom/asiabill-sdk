@@ -1,4 +1,5 @@
 import * as Joi                                            from 'joi';
+import { NotifyTypeNotSupportError, SignInvalidError }     from '../error';
 import SignHelper                                          from './signHelper';
 import Axios                                               from '../../lib/Axios';
 import redis                                               from '../../lib/redis';
@@ -7,54 +8,58 @@ import { ERROR_CARD_DECLINED, ERROR_PROCESSING_ERROR }     from '../../http/cons
 import { TRANSACTION_TYPE_AUTHORIZATION }                  from '../../http/constant/transactionType';
 import { RESULT_INVALID, RESULT_RESTRICTED, RESULT_VALID } from '../../http/constant/statusCredential';
 import { RESULT_COMPLETED, RESULT_FAILED }                 from '../../http/constant/statusTransaction';
-import {
+import type {
   Credential,
   OrderManagementRequest,
   OrderManagementResponse,
   OrderRequest,
   OrderResponse,
   PaymentGateway,
-  RedirectRequest,
+  RedirectRequest, RefundRequest,
   ValidateCredentialResponse
 }                                                          from '../type';
 import {
   schemaCaptureOrVoidResponse,
-  schemaCaptureRequest,
   schemaCredential,
-  schemaOrderRequest,
-  schemaOrderResponse,
-  schemaVoidRequest
+  schemaGetTransactionResponse, schemaOrderResponse,
+  schemaRefundResponse,
+  schemaWebhookResponse
 }                                                          from './validate';
 import {
   ErrorCodeCustomerCancel,
   INTERFACE_INFO,
-  MAP_ERROR,
-  PAYMENT_METHOD,
+  MAP_ERROR, MAP_REFUND_ERROR, NOTIFY_TYPES,
+  PAYMENT_METHOD, REFUND_TYPES,
   TRANSACTION_STATUS,
-  TRANSACTION_TYPES, TypeTransaction
+  TRANSACTION_TYPES,
+  TypeTransaction
 }                                                          from './constant';
 
 export default class AsiaBillGateway implements PaymentGateway {
 
-  public getDataCreateOrder(orderRequest: OrderRequest, credential: Credential): RedirectRequest {
-    if (!orderRequest) {
-      throw new Joi.ValidationError("create order request is required", orderRequest, null)
+  public isPostPurchase(body: any) {
+    if (!body || !body['orderNo'] || typeof body['orderNo'] !== 'string') {
+      throw new Joi.ValidationError('cannot orderNo from body', body, null);
     }
-    const result = schemaCredential.validate(credential, {
-      allowUnknown: true,
-    });
-    if (result.error) {
-      throw result.error;
+    return body['orderNo'].endsWith(AsiaBillGateway.suffixPostPurchase);
+  }
+
+  public getRefFromResponseGateway(body: any) {
+    if (!body || !body['orderNo'] || typeof body['orderNo'] !== 'string') {
+      throw new Joi.ValidationError('cannot get ref from body', body, null);
     }
-    const {value, error} = schemaOrderRequest.validate(
-      orderRequest, {
-        allowUnknown: true,
-      },
-    );
-    if (error) {
-      throw error;
+    return body['orderNo'].replace(AsiaBillGateway.suffixPostPurchase, '');
+  }
+
+  public getAccountIdFromResponseGateway(body: any) {
+    if (!body || !body['remark']) {
+      throw new Joi.ValidationError('cannot get account from body', body, null);
     }
-    const orderReqValid = value as OrderRequest;
+    return body['remark'];
+  }
+
+  public getRequestCreateOrder(orderRequest: OrderRequest, credential: Credential): RedirectRequest {
+    AsiaBillGateway.validateSchemaCredential(credential);
     let orderNo = orderRequest.reference;
     if (orderRequest.isPostPurchase) {
       orderNo += AsiaBillGateway.suffixPostPurchase;
@@ -65,37 +70,37 @@ export default class AsiaBillGateway implements PaymentGateway {
         merNo: credential.merNo,
         gatewayNo: credential.gatewayNo,
         orderNo: orderNo,
-        orderCurrency: orderReqValid.currency,
-        orderAmount: orderReqValid.amount,
-        returnUrl: orderReqValid.urlObject.returnUrl,
-        remark: orderReqValid.accountId,
-        callbackUrl: orderReqValid.urlObject.callbackUrl,
+        orderCurrency: orderRequest.currency,
+        orderAmount: orderRequest.amount,
+        returnUrl: orderRequest.urlObject.returnUrl,
+        remark: orderRequest.accountId,
+        callbackUrl: orderRequest.urlObject.callbackUrl,
         interfaceInfo: INTERFACE_INFO,
         paymentMethod: PAYMENT_METHOD,
-        firstName: orderReqValid.firstName,
-        lastName: orderReqValid.lastName,
-        email: orderReqValid.email,
-        phone: orderReqValid.billingAddress.phone,
-        country: orderReqValid.billingAddress.country,
-        state: orderReqValid.billingAddress.state,
-        city: orderReqValid.billingAddress.city,
-        address: orderReqValid.billingAddress.line1,
-        zip: orderReqValid.billingAddress.postal_code,
-        shipFirstName: orderReqValid.firstName,
-        shipLastName: orderReqValid.lastName,
-        shipPhone: orderReqValid.shippingAddress.phone,
-        shipCountry: orderReqValid.shippingAddress.country,
-        shipState: orderReqValid.shippingAddress.state,
-        shipCity: orderReqValid.shippingAddress.city,
-        shipAddress: orderReqValid.shippingAddress.line1,
-        shipZip: orderReqValid.shippingAddress.postal_code,
+        firstName: orderRequest.firstName,
+        lastName: orderRequest.lastName,
+        email: orderRequest.email,
+        phone: orderRequest.billingAddress.phone,
+        country: orderRequest.billingAddress.country,
+        state: orderRequest.billingAddress.state,
+        city: orderRequest.billingAddress.city,
+        address: orderRequest.billingAddress.line1,
+        zip: orderRequest.billingAddress.postal_code,
+        shipFirstName: orderRequest.firstName,
+        shipLastName: orderRequest.lastName,
+        shipPhone: orderRequest.shippingAddress.phone,
+        shipCountry: orderRequest.shippingAddress.country,
+        shipState: orderRequest.shippingAddress.state,
+        shipCity: orderRequest.shippingAddress.city,
+        shipAddress: orderRequest.shippingAddress.line1,
+        shipZip: orderRequest.shippingAddress.postal_code,
         signInfo: SignHelper.sign([
           credential.merNo,
           credential.gatewayNo,
           orderNo,
-          orderReqValid.currency,
-          orderReqValid.amount,
-          orderReqValid.urlObject.returnUrl,
+          orderRequest.currency,
+          orderRequest.amount,
+          orderRequest.urlObject.returnUrl,
           credential.signKey,
         ])
       },
@@ -104,13 +109,8 @@ export default class AsiaBillGateway implements PaymentGateway {
   }
 
   public getOrderResponse(body: any, credential: Credential): OrderResponse {
-    let result = schemaCredential.validate(credential, {
-      allowUnknown: true,
-    });
-    if (result.error) {
-      throw result.error;
-    }
-    result = schemaOrderResponse.validate(
+    AsiaBillGateway.validateSchemaCredential(credential);
+    const result = schemaOrderResponse.validate(
       body, {
         allowUnknown: true,
       },
@@ -179,51 +179,16 @@ export default class AsiaBillGateway implements PaymentGateway {
     };
   }
 
-  public isPostPurchase(body: any) {
-    if (!body || !body['orderNo'] || typeof body['orderNo'] !== 'string') {
-      throw new Joi.ValidationError('cannot orderNo from body', body, null);
-    }
-    return body['orderNo'].endsWith(AsiaBillGateway.suffixPostPurchase);
-  }
-
-  public getRefFromResponseGateway(body: any) {
-    if (!body || !body['orderNo'] || typeof body['orderNo'] !== 'string') {
-      throw new Joi.ValidationError('cannot get ref from body', body, null);
-    }
-    return body['orderNo'].replace(AsiaBillGateway.suffixPostPurchase, '');
-  }
-
-  public getAccountIdFromResponseGateway(body: any) {
-    if (!body || !body['remark']) {
-      throw new Joi.ValidationError('cannot get account from body', body, null);
-    }
-    return body['remark'];
-  }
-
   public async capture(captureRequest: OrderManagementRequest, credential: Credential): Promise<OrderManagementResponse> {
-    const captureReqValid = await schemaCaptureRequest.validateAsync(
-      captureRequest, {
-        allowUnknown: true,
-      },
-    );
-
-    return AsiaBillGateway.captureOrVoid(captureReqValid, credential, TRANSACTION_TYPES.CAPTURE);
+    return AsiaBillGateway.captureOrVoid(captureRequest, credential, TRANSACTION_TYPES.CAPTURE);
   }
 
   public async void(voidRequest: OrderManagementRequest, credential: Credential): Promise<OrderManagementResponse> {
-    const voidReqValid = await schemaVoidRequest.validateAsync(
-      voidRequest, {
-        allowUnknown: true,
-      },
-    );
-
-    return AsiaBillGateway.captureOrVoid(voidReqValid, credential, TRANSACTION_TYPES.VOID);
+    return AsiaBillGateway.captureOrVoid(voidRequest, credential, TRANSACTION_TYPES.VOID);
   }
 
   async validateCredential(credential: Credential): Promise<ValidateCredentialResponse> {
-    await schemaCredential.validateAsync(credential, {
-      allowUnknown: true,
-    });
+    AsiaBillGateway.validateSchemaCredential(credential);
 
     const requestPayload = {
       merNo: credential.merNo,
@@ -286,7 +251,191 @@ export default class AsiaBillGateway implements PaymentGateway {
     };
   }
 
+  async getOrderResponseFromWebhook(body: object, credential: Credential): Promise<OrderResponse> {
+    AsiaBillGateway.validateSchemaCredential(credential);
+    const webhookResValid = await schemaWebhookResponse.validateAsync(body, {allowUnknown: true});
+
+    const signInfo = SignHelper.sign([
+      credential.merNo,
+      credential.gatewayNo,
+      webhookResValid.tradeNo,
+      webhookResValid.orderNo,
+      webhookResValid.orderCurrency,
+      webhookResValid.orderAmount,
+      webhookResValid.orderStatus,
+      webhookResValid.orderInfo,
+      credential.signKey,
+    ]);
+
+    if (signInfo.toUpperCase() !== webhookResValid.signInfo) {
+      throw new SignInvalidError('sign invalid');
+    }
+
+    if (webhookResValid.notifyType !== NOTIFY_TYPES.PaymentResult) {
+      throw new NotifyTypeNotSupportError('notify type not supported');
+    }
+
+    let errorCode: string = '';
+    let errorMessage: string = '';
+
+    if (webhookResValid.orderStatus === TRANSACTION_STATUS.FAILURE) {
+      const result = AsiaBillGateway.getErrorCodeAndMessage(
+        webhookResValid.orderInfo,
+      );
+
+      if (result.errorCode === ERROR_PROCESSING_ERROR) {
+        logger.info('debug error', webhookResValid);
+      }
+
+      errorCode = result.errorCode;
+      errorMessage = result.errorMessage;
+    }
+
+    await redis.set(AsiaBillGateway.getCacheKeyTranNo(webhookResValid.tradeNo), webhookResValid.orderNo);
+
+    return {
+      errorCode,
+      errorMessage,
+      accountId: this.getAccountIdFromResponseGateway(webhookResValid),
+      reference: this.getRefFromResponseGateway(webhookResValid),
+      currency: webhookResValid.orderCurrency,
+      amount: webhookResValid.orderAmount,
+      gatewayReference: webhookResValid.tradeNo,
+      isPostPurchase: this.isPostPurchase(webhookResValid),
+      isSuccess: [TRANSACTION_STATUS.PENDING].includes(webhookResValid.orderStatus),
+      isTest: !!credential.sandbox,
+      timestamp: new Date().toISOString(),
+      isCancel: false,
+      transactionType: TRANSACTION_TYPE_AUTHORIZATION,
+    };
+  }
+
+  async getTransaction(getTransactionRequest: OrderManagementRequest, credential: Credential): Promise<OrderResponse> {
+    AsiaBillGateway.validateSchemaCredential(credential);
+
+    const url = credential.sandbox ?
+      process.env.ASIABILL_RETRIEVE_URL_TEST_MODE :
+      process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE;
+
+    const orderNo = await redis.get(AsiaBillGateway.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference));
+
+    logger.info(`ref ${AsiaBillGateway.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference)} ${orderNo}`);
+
+    const requestPayload = {
+      merNo: credential.merNo,
+      gatewayNo: credential.gatewayNo,
+      orderNo: orderNo,
+      signInfo: SignHelper.sign(
+        [
+          credential.merNo,
+          credential.gatewayNo,
+          credential.signKey,
+        ],
+      )
+    };
+
+    const response = await Axios.getInstance().post(url || '', requestPayload);
+    const getTransactionRes = await schemaGetTransactionResponse.validateAsync(
+      response.data.response,
+      {
+        allowUnknown: true,
+      },
+    );
+
+    const tradeInfo = getTransactionRes.tradeinfo;
+
+    let amount = parseFloat(tradeInfo.tradeAmount);
+    if (isNaN(amount) || amount < 0) {
+      amount = 0;
+    }
+    return {
+      timestamp: new Date().toISOString(),
+      accountId: getTransactionInfoReqValid.accountId,
+      reference: this.getRefFromResponseGateway(tradeInfo),
+      currency: tradeInfo.tradeCurrency,
+      isTest: !!credential.sandbox,
+      amount,
+      gatewayReference: tradeInfo.tradeNo,
+      isSuccess: [TRANSACTION_STATUS.PENDING, TRANSACTION_STATUS.SUCCESS].includes(parseInt(tradeInfo.queryResult)),
+      transactionType: getTransactionInfoReqValid.transactionType,
+    };
+  }
+
+  async refund(refundRequest: RefundRequest, credential: Credential): Promise<OrderManagementResponse> {
+    AsiaBillGateway.validateSchemaCredential(credential);
+
+    const getTransactionResponse = await this.getTransaction({
+      transactionType: refundRequest.transactionType,
+      accountId: refundRequest.accountId,
+      gatewayReference: refundRequest.gatewayReference,
+      reference: '',
+    }, credential);
+
+    const requestPayload = {
+      merNo: credential.merNo,
+      gatewayNo: credential.gatewayNo,
+      tradeNo: refundRequest.gatewayReference,
+      refundType: getTransactionResponse.amount === refundRequest.amount ? REFUND_TYPES.FULL : REFUND_TYPES.PARTIAL,
+      tradeAmount: getTransactionResponse.amount,
+      refundAmount: refundRequest.amount,
+      currency: refundRequest.currency,
+      refundReason: refundRequest.refundReason,
+      remark: refundRequest.accountId,
+      signInfo: SignHelper.sign(
+        [
+          credential.merNo,
+          credential.gatewayNo,
+          refundRequest.gatewayReference,
+          refundRequest.currency,
+          refundRequest.amount,
+          credential.signKey,
+        ],
+      )
+    };
+
+    const url = credential.sandbox ?
+      process.env.ASIABILL_REFUND_URL_TEST_MODE :
+      process.env.ASIABILL_REFUND_URL_LIVE_MODE;
+
+    const response = await Axios.getInstance().post(url || '', requestPayload);
+    const refundRes = await schemaRefundResponse.validateAsync(
+      response.data,
+      {
+        allowUnknown: true,
+      },
+    );
+
+    const result = refundRes.response.applyRefund.code === '00' ?
+      RESULT_COMPLETED : RESULT_FAILED;
+
+    let errorCode: string = '';
+    let errorMessage: string = '';
+
+    if (result === RESULT_FAILED) {
+      errorCode = MAP_REFUND_ERROR[refundRes.response.applyRefund.code] ||
+        ERROR_PROCESSING_ERROR;
+      errorMessage = refundRes.response.applyRefund.description ||
+        'something went wrong';
+    } else {
+      logger.info(`Refund success,
+      batchNo: ${refundRes.response.applyRefund.batchNo},
+      tradeNo: ${refundRes.response.applyRefund.tradeNo},
+      refundReason: ${refundRes.response.applyRefund.refundReason}.`,
+      );
+    }
+    return {
+      gatewayReference: refundRes.response.applyRefund.tradeNo,
+      reference: refundRequest.reference,
+      transactionType: refundRequest.transactionType,
+      result,
+      timestamp: new Date().toISOString(),
+      errorCode,
+      errorMessage,
+    };
+  }
+
   private static async captureOrVoid(captureOrVoidRequest: OrderManagementRequest, credential: Credential, authType: TypeTransaction): Promise<OrderManagementResponse> {
+    AsiaBillGateway.validateSchemaCredential(credential);
     const requestPayload = {
       merNo: credential.merNo,
       gatewayNo: credential.gatewayNo,
@@ -393,72 +542,13 @@ export default class AsiaBillGateway implements PaymentGateway {
     return `${process.env.ASIABILL_CACHE_KEY_TRANO}/${ref}`;
   }
 
-  async getOrderResponseFromWebhook(body: object, credential: Credential): Promise<OrderResponse> {
-    const creResValid = schemaCredential.validate(credential, {
+  private static validateSchemaCredential(credential: Credential) {
+    let {error} = schemaCredential.validate(credential, {
       allowUnknown: true,
     });
-    if (creResValid.error) {
-      throw creResValid.error;
+    if (error) {
+      throw error;
     }
-    const webhookResValid = await schemaWebhookResponse.validateAsync(
-      body, {
-        allowUnknown: true,
-      },
-    );
-
-    const signInfo = sign([
-      credential.merNo,
-      credential.gatewayNo,
-      webhookResValid.tradeNo,
-      webhookResValid.orderNo,
-      webhookResValid.orderCurrency,
-      webhookResValid.orderAmount,
-      webhookResValid.orderStatus,
-      webhookResValid.orderInfo,
-      credential.signKey,
-    ]);
-
-    if (signInfo.toUpperCase() !== webhookResValid.signInfo) {
-      throw new SignInvalidError('sign invalid');
-    }
-
-    if (webhookResValid.notifyType !== NOTIFY_TYPES.PaymentResult) {
-      throw new NotifyTypeNotSupportError('notify type not supported');
-    }
-
-    let errorCode;
-    let errorMessage;
-
-    if (webhookResValid.orderStatus === TRANSACTION_STATUS.FAILURE) {
-      const result = this.getErrorCodeAndMessage(
-        webhookResValid.orderInfo,
-      );
-
-      if (result.errorCode === ERROR_PROCESSING_ERROR) {
-        logger.info('debug error', webhookResValid);
-      }
-
-      errorCode = result.errorCode;
-      errorMessage = result.errorMessage;
-    }
-
-    await redis.set(this.getCacheKeyTranNo(webhookResValid.tradeNo),
-      webhookResValid.orderNo);
-
-    return {
-      errorCode,
-      errorMessage,
-      accountId: this.getAccountIdFromResponseGateway(webhookResValid),
-      reference: this.getRefFromResponseGateway(webhookResValid),
-      currency: webhookResValid.orderCurrency,
-      amount: webhookResValid.orderAmount,
-      gatewayReference: webhookResValid.tradeNo,
-      isPostPurchase: this.isPostPurchase(webhookResValid),
-      isSuccess: [TRANSACTION_STATUS.PENDING].includes(webhookResValid.orderStatus),
-      isTest: credential.sandbox,
-      timestamp: new Date().toISOString(),
-      isCancel: false,
-      transactionType: TRANSACTION_TYPE_AUTHORIZATION,
-    };
   }
+
 }

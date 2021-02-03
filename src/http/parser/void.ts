@@ -1,9 +1,11 @@
+import { Request }                      from 'express';
+
 const ShopBaseSigner = require('../../lib/Signer');
 const SignInvalidError = require('../../errors/SignInvalid');
-import { schemaOrderManagementRequest } from '../../payment/asabill/validate';
+import { schemaOrderManagementRequest } from '../../payment/validate';
 
-export function parseVoidRequest(request) {
-  const {value, error} = schemaOrderManagementRequest.validateAsync(request.body, {
+export function parseVoidRequest(request: Request) {
+  const {value, error} = schemaOrderManagementRequest.validate(request.body as object, {
     allowUnknown: true,
   });
 

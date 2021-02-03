@@ -1,10 +1,11 @@
 import ShopBaseSigner                 from '../../lib/Signer';
 import { RefundRequest }              from '../../payment/type';
 import { SignInvalidError }           from '../../payment/error';
-import { schemaRefundPaymentRequest } from '../../payment/asabill/validate';
+import { Request }                    from 'express';
+import { schemaRefundPaymentRequest } from '../../payment/validate';
 
-export function parseRefundRequest(request): RefundRequest {
-  const {value, error} = schemaRefundPaymentRequest.validate(request.body, {
+export function parseRefundRequest(request: Request): RefundRequest {
+  const {value, error} = schemaRefundPaymentRequest.validate(request.body as object, {
     allowUnknown: true,
   });
 

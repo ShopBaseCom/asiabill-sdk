@@ -46,12 +46,12 @@ export type OrderResponse = {
   isTest: boolean
   reference: string
   gatewayReference: string
-  isPostPurchase
+  isPostPurchase?: boolean
   timestamp: string
-  errorCode: string
-  errorMessage: string
+  errorCode?: string
+  errorMessage?: string
   isSuccess: boolean
-  isCancel: boolean
+  isCancel?: boolean
   transactionType: string
 }
 
@@ -93,15 +93,17 @@ export type StatusTransaction = string
 
 export interface PaymentGateway {
 
-  getDataCreateOrder(orderRequest: OrderRequest, credential: Credential): RedirectRequest
-
-  getOrderResponse(body: object, credential: Credential): OrderResponse
-
   isPostPurchase(body: object): boolean
 
   getRefFromResponseGateway(body: object): string
 
   getAccountIdFromResponseGateway(body: object): number
+
+  getRequestCreateOrder(orderRequest: OrderRequest, credential: Credential): RedirectRequest
+
+  getOrderResponse(body: object, credential: Credential): OrderResponse
+
+  getOrderResponseFromWebhook(body: object, credential: Credential): Promise<OrderResponse>
 
   validateCredential(credential: Credential): Promise<ValidateCredentialResponse>
 
@@ -109,6 +111,8 @@ export interface PaymentGateway {
 
   void(voidRequest: OrderManagementRequest, credential: Credential): Promise<OrderManagementResponse>
 
-  getOrderResponseFromWebhook(body: object, credential: Credential): Promise<OrderResponse>
+  refund(refundRequest: RefundRequest, credential: Credential): Promise<OrderManagementResponse>
+
+  getTransaction(getTransactionRequest: OrderManagementRequest, credential: Credential): Promise<OrderResponse>
 
 }

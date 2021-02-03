@@ -1,25 +1,4 @@
-import * as Joi                   from 'joi';
-import { OrderManagementRequest } from '../type';
-
-export const schemaAddress = Joi.object({
-  phone: Joi.string().max(50).optional(),
-  country: Joi.string().max(100).required(),
-  state: Joi.string().max(100).optional(),
-  city: Joi.string().max(100).required(),
-  line1: Joi.string().max(500).required(),
-  postal_code: Joi.string().max(100).required(),
-});
-
-export const schemaOrderRequest = Joi.object().keys({
-  currency: Joi.string().max(3).required(),
-  amount: Joi.number().max(1000000000).required(),
-  firstName: Joi.string().max(100).required(),
-  lastName: Joi.string().max(50).required(),
-  email: Joi.string().max(200).required(),
-
-  shippingAddress: schemaAddress.required(),
-  billingAddress: schemaAddress.required(),
-});
+import * as Joi from 'joi';
 
 export const schemaOrderResponse = Joi.object().keys({
   orderAmount: Joi.number().max(1000000000).required(),
@@ -32,19 +11,6 @@ export const schemaOrderResponse = Joi.object().keys({
   signInfo: Joi.string().required(),
 })
 
-export const schemaGetTransactionRequest = Joi.object().keys({
-  accountId: Joi.string().required(),
-  gatewayReference: Joi.string().required(),
-  transactionType: Joi.string().required(),
-});
-
-export const schemaCaptureRequest = Joi.object().keys({
-  accountId: Joi.string(),
-  reference: Joi.string().required(),
-  gatewayReference: Joi.string().required(),
-  transactionType: Joi.string().required(),
-});
-
 export const schemaCaptureOrVoidResponse = Joi.object().keys({
   respon: Joi.object().keys({
     merNo: Joi.string().allow(null, ''),
@@ -56,25 +22,6 @@ export const schemaCaptureOrVoidResponse = Joi.object().keys({
   }),
 });
 
-export const schemaVoidRequest = Joi.object().keys({
-  accountId: Joi.string(),
-  reference: Joi.string().required(),
-  gatewayReference: Joi.string().required(),
-  transactionType: Joi.string().required(),
-});
-
-export const schemaRefundRequest = Joi.object().keys({
-  // remark
-  accountId: Joi.string(),
-  reference: Joi.string().required(),
-  // tradeNo
-  gatewayReference: Joi.string().required(),
-  // refundAmount
-  amount: Joi.number().required(),
-  currency: Joi.string().max(3).required(),
-  refundReason: Joi.string().required(),
-});
-
 export const schemaCredential = Joi.object({
   sandbox: Joi.bool(),
   merNo: Joi.string().max(5).required(),
@@ -82,27 +29,49 @@ export const schemaCredential = Joi.object({
   signKey: Joi.string().max(100).required(),
 });
 
-export const schemaOrderManagementRequest = Joi.object({
-  x_account_id: Joi.string().required(),
-  x_amount: Joi.number().required(),
-  x_currency: Joi.string().max(3).required(),
-  x_reference: Joi.string().required(),
-  x_test: Joi.bool().required(),
-  x_gateway_reference: Joi.string().required(),
-  x_transaction_type: Joi.string().required(),
-  x_invoice: Joi.string(),
-  x_url_callback: Joi.string().required(),
+export const schemaRefundResponse = Joi.object().keys({
+  response: Joi.object().keys({
+    applyRefund: Joi.object().keys({
+      batchNo: Joi.number().allow(null, 0),
+      merNo: Joi.string().allow(null, ''),
+      gatewayNo: Joi.string().allow(null, ''),
+      code: Joi.string().allow(null, ''),
+      description: Joi.string().allow(null, ''),
+      tradeNo: Joi.string().allow(null, ''),
+      refundReason: Joi.string().allow(null, ''),
+      remark: Joi.string().allow(null, ''),
+    }),
+  }),
 });
 
-export const schemaRefundPaymentRequest = Joi.object({
-  x_account_id: Joi.string().required(),
-  x_amount: Joi.number().required(),
-  x_currency: Joi.string().max(3).required(),
-  x_reference: Joi.string().required(),
-  x_test: Joi.bool().required(),
-  x_gateway_reference: Joi.string().required(),
-  x_transaction_type: Joi.string().required(),
-  x_invoice: Joi.string(),
-  x_url_callback: Joi.string().required(),
-  x_refund_reason: Joi.string().required(),
+export const schemaWebhookResponse = Joi.object().keys({
+  signInfo: Joi.string().required(),
+  orderNo: Joi.string().required(),
+  gatewayNo: Joi.string().required(),
+  tradeNo: Joi.string().required(),
+  authTypeStatus: Joi.number().required(),
+  orderCurrency: Joi.string().max(3).required(),
+  orderStatus: Joi.number().required(),
+  remark: Joi.string().required(),
+  orderAmount: Joi.number().required(),
+  notifyType: Joi.string().required(),
+  merNo: Joi.string().required(),
+  orderInfo: Joi.string().required(),
+});
+
+export const schemaGetTransactionResponse = Joi.object().keys({
+  response: Joi.object().keys({
+    tradeinfo: Joi.object().keys({
+      merNo: Joi.string().allow(null, ''),
+      gatewayNo: Joi.string().allow(null, ''),
+      orderNo: Joi.string().allow(null, ''),
+      tradeNo: Joi.string().allow(null, ''),
+      tradeDate: Joi.string().allow(null, ''),
+      tradeAmount: Joi.string().allow(null, ''),
+      tradeCurrency: Joi.string().allow(null, ''),
+      sourceWebsite: Joi.string().allow(null, ''),
+      authStatus: Joi.string().allow(null, ''),
+      queryResult: Joi.number().allow(null, ''),
+    }),
+  }),
 });

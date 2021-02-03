@@ -245,7 +245,7 @@ describe('AsiaBill request create order', () => {
       for (let [request, error] of testCases) {
         it(`sets error ${error}`, function () {
           try {
-            new AsiaBillGateway().getDataCreateOrder(request as OrderRequest, credential);
+            new AsiaBillGateway().getRequestCreateOrder(request as OrderRequest, credential);
             throw new Error('test case should throw error')
           } catch (e) {
             expect(e.message).toBe(error);
@@ -280,7 +280,7 @@ describe('AsiaBill request create order', () => {
       for (let [cre, error] of testCases) {
         it(`sets error ${error}`, function () {
           try {
-            new AsiaBillGateway().getDataCreateOrder(orderRequest, cre as Credential);
+            new AsiaBillGateway().getRequestCreateOrder(orderRequest, cre as Credential);
             throw new Error('test case should throw error')
           } catch (e) {
             expect(e.message).toBe(error);
@@ -291,7 +291,7 @@ describe('AsiaBill request create order', () => {
     })
 
     describe('should return success data', () => {
-      const res = new AsiaBillGateway().getDataCreateOrder(orderRequest, credential);
+      const res = new AsiaBillGateway().getRequestCreateOrder(orderRequest, credential);
       expect(res).toEqual({
         "data": {
           "address": "some where",

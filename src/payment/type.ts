@@ -86,7 +86,7 @@ export type RefundRequest = {
   refundReason: string
 }
 
-// ShopBase Credential always has an isTestMode field that is a bool. All remaining fields are string
+// ShopBase Credential always has an sandbox field that is a bool. All remaining fields are string
 export type Credential = Record<string, string | boolean>
 export type StatusCheckCredential = string
 export type StatusTransaction = string

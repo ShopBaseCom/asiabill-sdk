@@ -1,6 +1,6 @@
 import * as Joi                                            from 'joi';
 import { NotifyTypeNotSupportError, SignInvalidError }     from '../error';
-import SignHelper                                          from './signHelper';
+import * as SignHelper                                     from './signHelper';
 import Axios                                               from '../../lib/Axios';
 import redis                                               from '../../lib/redis';
 import logger                                              from '../../lib/logger';
@@ -317,9 +317,9 @@ export default class AsiaBillGateway implements PaymentGateway {
       process.env.ASIABILL_RETRIEVE_URL_TEST_MODE :
       process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE;
 
-    const orderNo = await redis.get(AsiaBillGateway.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference));
+    const orderNo = await redis.get(AsiaBillGateway.getCacheKeyTranNo(getTransactionRequest.gatewayReference));
 
-    logger.info(`ref ${AsiaBillGateway.getCacheKeyTranNo(getTransactionInfoReqValid.gatewayReference)} ${orderNo}`);
+    logger.info(`ref ${AsiaBillGateway.getCacheKeyTranNo(getTransactionRequest.gatewayReference)} ${orderNo}`);
 
     const requestPayload = {
       merNo: credential.merNo,
@@ -350,14 +350,14 @@ export default class AsiaBillGateway implements PaymentGateway {
     }
     return {
       timestamp: new Date().toISOString(),
-      accountId: getTransactionInfoReqValid.accountId,
+      accountId: getTransactionRequest.accountId,
       reference: this.getRefFromResponseGateway(tradeInfo),
       currency: tradeInfo.tradeCurrency,
       isTest: !!credential.sandbox,
       amount,
       gatewayReference: tradeInfo.tradeNo,
       isSuccess: [TRANSACTION_STATUS.PENDING, TRANSACTION_STATUS.SUCCESS].includes(parseInt(tradeInfo.queryResult)),
-      transactionType: getTransactionInfoReqValid.transactionType,
+      transactionType: getTransactionRequest.transactionType,
     };
   }
 
@@ -542,7 +542,7 @@ export default class AsiaBillGateway implements PaymentGateway {
     return `${process.env.ASIABILL_CACHE_KEY_TRANO}/${ref}`;
   }
 
-  private static validateSchemaCredential(credential: Credential) {
+  public static validateSchemaCredential(credential: Credential) {
     let {error} = schemaCredential.validate(credential, {
       allowUnknown: true,
     });

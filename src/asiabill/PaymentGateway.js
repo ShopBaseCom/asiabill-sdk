@@ -277,11 +277,13 @@ class AsiaBillPaymentGateway {
 
     if (!errorCode) {
       // get error from string
-      const rs = orderInfo.match(/([^:]+):(.*)/);
-      if (rs && rs[1] && rs[2]) {
-        code = rs[1];
-        message = rs[2];
+      const [field1, field2, field3] = orderInfo.split(':');
+      if (field3) {
+        message = `${this.capitalizeFirstLetter(field2)}: ${this.capitalizeFirstLetter(field3)}`;
+      } else {
+        message = field2;
       }
+      code = field1;
     }
 
     if (code === ErrorCodeCustomerCancel) {
@@ -307,6 +309,15 @@ class AsiaBillPaymentGateway {
       errorMessage: message,
       errorCode: errorCode,
     };
+  }
+
+  /**
+   *
+   * @param {string} string
+   * @return {string}
+   */
+  capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
   }
 
   /**

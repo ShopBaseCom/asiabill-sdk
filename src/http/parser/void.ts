@@ -1,8 +1,7 @@
 import { Request }                      from 'express';
-
-const ShopBaseSigner = require('../../lib/Signer');
-const SignInvalidError = require('../../errors/SignInvalid');
 import { schemaOrderManagementRequest } from '../../payment/validate';
+import ShopBaseSigner                   from '../../lib/Signer';
+import { SignInvalidError }             from '../../payment/error';
 
 export function parseVoidRequest(request: Request) {
   const {value, error} = schemaOrderManagementRequest.validate(request.body as object, {

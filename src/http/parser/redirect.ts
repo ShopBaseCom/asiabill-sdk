@@ -38,6 +38,7 @@ export const schemaRedirectRequest = Joi.object({
   x_post_purchase: Joi.bool(),
   x_customer_shipping_zip: Joi.string(),
   x_signature: Joi.string(),
+  purchase_items: Joi.string().optional(),
 });
 
 export async function parseOrderRequest(request: any): Promise<OrderRequest> {
@@ -80,5 +81,6 @@ export async function parseOrderRequest(request: any): Promise<OrderRequest> {
     },
     shopName: value['x_shop_name'],
     isPostPurchase: value['x_post_purchase'],
+    purchaseItems: value['purchase_items'] ? JSON.parse(value['purchase_items']) : null,
   };
 }

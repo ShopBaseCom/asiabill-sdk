@@ -42,4 +42,9 @@ export const ERROR_PAYMENT_NOT_SUPPORTED = 'payment_not_supported';
  * @type {string}
  */
 export const ERROR_MISSING_PARAMS = 'missing_param';
+/**
+ * Validation error
+ * @type {string}
+ */
+export const ERROR_VALIDATION_ERROR = 'validation_error';
 

@@ -9,7 +9,7 @@ import { TRANSACTION_TYPE_AUTHORIZATION }                  from '../../http/cons
 import { RESULT_INVALID, RESULT_RESTRICTED, RESULT_VALID } from '../../http/constant/statusCredential';
 import { RESULT_COMPLETED, RESULT_FAILED }                 from '../../http/constant/statusTransaction';
 import type {
-  Credential,
+  Credential, lineItem,
   OrderManagementRequest,
   OrderManagementResponse,
   OrderRequest,
@@ -65,7 +65,7 @@ export default class AsiaBillGateway implements PaymentGateway {
       orderNo += AsiaBillGateway.suffixPostPurchase;
     }
 
-    return {
+    const redirectRequest = {
       data: {
         merNo: credential.merNo,
         gatewayNo: credential.gatewayNo,
@@ -102,10 +102,21 @@ export default class AsiaBillGateway implements PaymentGateway {
           orderRequest.amount,
           orderRequest.urlObject.returnUrl,
           credential.signKey,
-        ])
+        ]),
+        goods_detail: undefined as Array<any>
       },
       url: AsiaBillGateway.getUrlApi(credential),
-    };
+    }
+
+    if (orderRequest.purchaseItems) {
+      redirectRequest.data.goods_detail = orderRequest.purchaseItems.map((item) => ({
+        productName: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+    }
+
+    return redirectRequest;
   }
 
   public getOrderResponse(body: any, credential: Credential): OrderResponse {
@@ -519,7 +530,21 @@ export default class AsiaBillGateway implements PaymentGateway {
     let errorCode = MAP_ERROR[code];
 
     if (!errorCode) {
-      [code, message] = orderInfo.split(':');
+      // get error from string
+      const [field1, field2, field3] = orderInfo.split(':');
+      if (field3) {
+        message = `${this.capitalizeFirstLetter(field2)}: ${this.capitalizeFirstLetter(field3)}`;
+      } else {
+        message = field2;
+      }
+      code = field1;
+    }
+
+    if (code === ErrorCodeCustomerCancel) {
+      return {
+        errorCode: ERROR_CARD_DECLINED,
+        errorMessage: message,
+      };
     }
 
     errorCode = MAP_ERROR[code];
@@ -553,4 +578,7 @@ export default class AsiaBillGateway implements PaymentGateway {
     }
   }
 
+  private static capitalizeFirstLetter(string: string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
 }

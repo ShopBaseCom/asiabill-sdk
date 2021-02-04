@@ -178,7 +178,7 @@ describe('AsiaBill', () => {
       })
     })
 
-    describe.skip('get order response should detect error from orderInfo', () => {
+    describe('get order response should detect error from orderInfo', () => {
       const orderResponse = {
         orderAmount: 1000,
         orderCurrency: 'USD',

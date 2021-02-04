@@ -1,8 +1,7 @@
 import { OrderManagementRequest } from '../../payment/type';
-
-const Joi = require('joi');
-const ShopBaseSigner = require('../../lib/Signer');
-const SignInvalidError = require('../../errors/SignInvalid');
+import Joi                        from 'joi';
+import ShopBaseSigner             from '../../lib/Signer';
+import { SignInvalidError }       from '../../payment/error';
 
 const schemaGetTransactionRequest = Joi.object({
   x_account_id: Joi.string().required(),

@@ -14,9 +14,16 @@ export type UrlObject = {
   callbackUrl: string
 }
 
+export type lineItem = {
+  name: string
+  quantity: number
+  price: number
+}
+
 export type OrderRequest = {
   billingAddress: CustomerAddress
   shippingAddress: CustomerAddress
+  purchaseItems?: lineItem[]
   currency: string
   amount: number
   firstName: string

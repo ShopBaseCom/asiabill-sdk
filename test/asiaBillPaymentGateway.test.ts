@@ -167,7 +167,7 @@ describe('AsiaBill', () => {
       }
     })
 
-    describe.skip('should validate request', () => {
+    describe.skip('validate request', () => {
       const testCases = [
         [null, "create order request is required"],
         [{...orderRequest, currency: undefined}, '"currency" is required'],
@@ -383,7 +383,7 @@ describe('AsiaBill', () => {
       }
     })
 
-    describe('should validate credential', () => {
+    describe('validate credential', () => {
       const testCases = [
         [{...credential, merNo: undefined}, '"merNo" is required'],
         [{...credential, merNo: 1}, '"merNo" must be a string'],
@@ -406,7 +406,7 @@ describe('AsiaBill', () => {
       ]
 
       for (let [cre, error] of testCases) {
-        it(`sets error ${error}`, function () {
+        it(`credential should throw error: ${error}`, function () {
           try {
             new AsiaBillGateway().getRequestCreateOrder(orderRequest, cre as Credential);
             throw new Error('test case should throw error')

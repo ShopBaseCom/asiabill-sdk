@@ -2,6 +2,9 @@ import type { Credential, CustomerAddress, OrderRequest } from '../src/payment/t
 import AsiaBillGateway                                    from '../src/payment/asabill/Gateway';
 import * as Joi                                           from 'joi';
 import * as signHelper                                    from '../src/payment/asabill/signHelper';
+import { MAP_ERROR, TRANSACTION_STATUS }                  from '../src/payment/asabill/constant';
+
+jest.mock('../src/lib/logger')
 
 const address: CustomerAddress = {
   phone: '0123456789',
@@ -97,7 +100,7 @@ describe('AsiaBill', () => {
       })
 
       it('should sign data', () => {
-        signHelper.sign1 = signHelper.sign
+        const signTmp = signHelper.sign
         // @ts-ignore
         signHelper.sign = jest.fn(() => 'vietlungtung')
         const res = new AsiaBillGateway().getRequestCreateOrder(orderRequest, credential)
@@ -114,8 +117,54 @@ describe('AsiaBill', () => {
           orderRequest.urlObject.returnUrl,
           credential.signKey,
         ])
-        signHelper.sign = signHelper.sign1
+        // @ts-ignore
+        signHelper.sign = signTmp
       })
+
+      it('post purchase should change orderNo', () => {
+        const normal = new AsiaBillGateway().getRequestCreateOrder({...orderRequest, isPostPurchase: false}, credential)
+        const postPurchase = new AsiaBillGateway().getRequestCreateOrder({
+          ...orderRequest,
+          isPostPurchase: true
+        }, credential)
+
+        expect(normal.data.orderNo).not.toBe(postPurchase.data.orderNo)
+        expect(postPurchase.data.orderNo).toBe(normal.data.orderNo + '_1')
+      })
+    })
+
+    describe('get order response should detect error from orderInfo', () => {
+      const orderResponse = {
+        orderAmount: 1000,
+        orderCurrency: 'USD',
+        orderNo: 'orderNo',
+        tradeNo: 'tradeNo',
+        remark: 'remark',
+        orderInfo: 'orderInfo',
+        orderStatus: TRANSACTION_STATUS.FAILURE,
+        signInfo: 'signInfo',
+      }
+      for (let key in MAP_ERROR) {
+        const normal = new AsiaBillGateway().getOrderResponse({
+          ...orderResponse,
+          orderInfo: `${key}:message`
+        }, credential)
+        it(`detect error patent ${key}:message`, () => {
+          expect(normal.errorCode).toBe(MAP_ERROR[key])
+          expect(normal.errorMessage).toBe("message")
+        })
+      }
+
+      for (let key in MAP_ERROR) {
+        const normal = new AsiaBillGateway().getOrderResponse({
+          ...orderResponse,
+          orderInfo: `${key}:field:message`
+        }, credential)
+        it(`detect error patent ${key}:field:message`, () => {
+          expect(normal.errorCode).toBe(MAP_ERROR[key])
+          expect(normal.errorMessage).toBe("Field: Message")
+        })
+      }
     })
 
     describe.skip('should validate request', () => {

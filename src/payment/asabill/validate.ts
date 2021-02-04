@@ -12,11 +12,13 @@ export const schemaOrderResponse = Joi.object().keys({
 })
 
 export const schemaCaptureOrVoidResponse = Joi.object().keys({
+  // @todo should validate data. now only validate type
   respon: Joi.object().keys({
     merNo: Joi.string().allow(null, ''),
     gatewayNo: Joi.string().allow(null, ''),
     tradeNo: Joi.string().allow(null, ''),
     orderNo: Joi.string().allow(null, ''),
+    // @todo order status should be number -> joj support convert
     orderStatus: Joi.string().allow(null, ''),
     orderInfo: Joi.string().allow(null, ''),
   }),

@@ -225,7 +225,8 @@ export default class AsiaBillGateway implements PaymentGateway {
     ];
     const errorStatus = [
       TRANSACTION_STATUS.ACCESS_IP_ERROR,
-      TRANSACTION_STATUS.QUERY_SYSTEM_ERROR];
+      TRANSACTION_STATUS.QUERY_SYSTEM_ERROR
+    ];
 
     const tradeInfo = response.data.response.tradeinfo;
 
@@ -349,6 +350,7 @@ export default class AsiaBillGateway implements PaymentGateway {
       amount = 0;
     }
     return {
+      // @todo The timestamp must be the timestamp of the transaction creation from the gateway -> field tradeDate
       timestamp: new Date().toISOString(),
       accountId: getTransactionRequest.accountId,
       reference: this.getRefFromResponseGateway(tradeInfo),

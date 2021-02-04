@@ -1,8 +1,62 @@
-import type { Credential, CustomerAddress, OrderRequest } from '../src/payment/type';
-import AsiaBillGateway                                    from '../src/payment/asabill/Gateway';
-import * as Joi                                           from 'joi';
-import * as signHelper                                    from '../src/payment/asabill/signHelper';
-import { MAP_ERROR, TRANSACTION_STATUS }                  from '../src/payment/asabill/constant';
+import type { Credential, CustomerAddress, OrderRequest }   from '../src/payment/type';
+import AsiaBillGateway                                      from '../src/payment/asabill/Gateway';
+import * as Joi                                             from 'joi';
+import * as signHelper                                      from '../src/payment/asabill/signHelper';
+import { MAP_ERROR, TRANSACTION_STATUS, TRANSACTION_TYPES } from '../src/payment/asabill/constant';
+import { TRANSACTION_TYPE_CAPTURE, TRANSACTION_TYPE_VOID }  from '../src/http/constant/transactionType';
+import Axios                                                from '../src/lib/Axios';
+import axios                                                from 'axios'
+import { RESULT_COMPLETED, RESULT_FAILED }                  from '../src/http/constant/statusTransaction';
+import { RESULT_RESTRICTED, RESULT_VALID }                  from '../src/http/constant/statusCredential';
+import redis                                                from '../src/lib/redis';
+import type { Callback }                                    from 'redis';
+
+process.env.ASIABILL_CAPTURE_VOID_URL_TEST_MODE = 'ASIABILL_CAPTURE_VOID_URL_TEST_MODE'
+process.env.ASIABILL_CAPTURE_VOID_URL_LIVE_MODE = 'ASIABILL_CAPTURE_VOID_URL_LIVE_MODE'
+process.env.ASIABILL_RETRIEVE_URL_TEST_MODE = 'ASIABILL_RETRIEVE_URL_TEST_MODE'
+process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE = 'ASIABILL_RETRIEVE_URL_LIVE_MODE'
+process.env.ASIABILL_CACHE_KEY_TRANO = 'ASIABILL_CACHE_KEY_TRANO'
+process.env.ASIABILL_URL_LIVE_MODE = 'live_mode'
+process.env.ASIABILL_URL_TEST_MODE = 'test_mode'
+
+function mockAxios(params: Record<string, any>): Function {
+  const getInstanceTmp = Axios.getInstance
+  // @ts-ignore
+  Axios.getInstance = () => ({
+    ...axios.create(),
+    ...params
+  })
+  return function () {
+    // @ts-ignore
+    Axios.getInstance = getInstanceTmp
+  }
+}
+
+function mockRedis(mockFun: Function): { mockFun: (key: string, cb?: Callback<string | null>) => boolean; close: () => void } {
+  const getTmp = redis.get
+  // @ts-ignore
+  redis.get = jest.fn(mockFun)
+  return {
+    mockFun: redis.get,
+    close: function () {
+      // @ts-ignore
+      redis.get = getTmp
+    }
+  }
+}
+
+function mockSignHelper(mockFun: Function): { mockFun: (signValues: any[]) => string; close: () => void } {
+  const signTmp = signHelper.sign
+  // @ts-ignore
+  signHelper.sign = jest.fn(mockFun)
+  return {
+    mockFun: signHelper.sign,
+    close: function () {
+      // @ts-ignore
+      signHelper.sign = signTmp
+    }
+  }
+}
 
 jest.mock('../src/lib/logger')
 
@@ -82,33 +136,25 @@ describe('AsiaBill', () => {
     describe('create order', () => {
 
       it('should get url from env live mode', () => {
-        process.env.ASIABILL_URL_LIVE_MODE = 'live_mode'
         expect(new AsiaBillGateway().getRequestCreateOrder(orderRequest, {
           ...credential,
           sandbox: false
         }).url).toBe('live_mode')
-        delete process.env.ASIABILL_URL_LIVE_MODE
       })
 
       it('should get url from env test mode', () => {
-        process.env.ASIABILL_URL_TEST_MODE = 'test_mode'
         expect(new AsiaBillGateway().getRequestCreateOrder(orderRequest, {
           ...credential,
           sandbox: true
         }).url).toBe('test_mode')
-        delete process.env.ASIABILL_URL_TEST_MODE
       })
 
       it('should sign data', () => {
-        const signTmp = signHelper.sign
-        // @ts-ignore
-        signHelper.sign = jest.fn(() => 'vietlungtung')
+        const {mockFun, close} = mockSignHelper(() => 'vietlungtung')
         const res = new AsiaBillGateway().getRequestCreateOrder(orderRequest, credential)
         expect(res.data.signInfo).toBe('vietlungtung')
-        // @ts-ignore
-        expect(signHelper.sign).toHaveBeenCalled()
-        // @ts-ignore
-        expect(signHelper.sign).toHaveBeenCalledWith([
+        expect(mockFun).toHaveBeenCalled()
+        expect(mockFun).toHaveBeenCalledWith([
           credential.merNo,
           credential.gatewayNo,
           orderRequest.reference,
@@ -117,8 +163,7 @@ describe('AsiaBill', () => {
           orderRequest.urlObject.returnUrl,
           credential.signKey,
         ])
-        // @ts-ignore
-        signHelper.sign = signTmp
+        close()
       })
 
       it('post purchase should change orderNo', () => {
@@ -133,7 +178,7 @@ describe('AsiaBill', () => {
       })
     })
 
-    describe('get order response should detect error from orderInfo', () => {
+    describe.skip('get order response should detect error from orderInfo', () => {
       const orderResponse = {
         orderAmount: 1000,
         orderCurrency: 'USD',
@@ -451,8 +496,409 @@ describe('AsiaBill', () => {
           "zip": "10000",
           "signInfo": "9d00b3640e01ba21b64022f2338455de47e0aa9fcc896e44c99d0ed05c05caa3",
         },
-        url: ''
+        url: process.env.ASIABILL_URL_LIVE_MODE
       });
+    })
+
+    describe('is post purchase', () => {
+      it('should detect transaction post purchase', () => {
+        expect(new AsiaBillGateway().isPostPurchase({orderNo: '123'})).toBe(false)
+      })
+      it('should detect transaction post purchase', () => {
+        expect(new AsiaBillGateway().isPostPurchase({orderNo: '123_1'})).toBe(true)
+      })
+    })
+
+    describe('capture order', () => {
+
+      it('should sign request before sending capture to gateway', async () => {
+        const postRequest = jest.fn(() => ({
+          data: {
+            respon: {
+              merNo: 'merNo',
+              gatewayNo: 'gatewayNo',
+              tradeNo: 'tradeNo',
+              orderNo: 'orderNo',
+              orderStatus: TRANSACTION_STATUS.SUCCESS.toString(),
+              orderInfo: 'orderInfo',
+            },
+          }
+        }))
+        const closeAxios = mockAxios({post: postRequest})
+
+        const {mockFun, close} = mockSignHelper(() => 'vietlungtung')
+
+        const asiaBill = new AsiaBillGateway()
+        await asiaBill.capture({
+          reference: 'demo ref',
+          accountId: 'accountlungtung',
+          gatewayReference: 'gatewayReference',
+          transactionType: TRANSACTION_TYPE_CAPTURE
+        }, credential)
+        expect(mockFun).toHaveBeenCalledWith([
+          credential.merNo,
+          credential.gatewayNo,
+          'gatewayReference',
+          TRANSACTION_TYPES.CAPTURE,
+          credential.signKey,
+        ])
+        expect(postRequest).toHaveBeenCalledWith(process.env.ASIABILL_CAPTURE_VOID_URL_LIVE_MODE, {
+          "merNo": "12345",
+          "gatewayNo": "123",
+          "tradeNo": "gatewayReference",
+          "authType": 1,
+          "remark": "accountlungtung",
+          "signInfo": "vietlungtung"
+        })
+        closeAxios()
+        close()
+      })
+
+      it('should return success when gateway response success', async () => {
+        const postRequest = jest.fn(() => ({
+          data: {
+            respon: {
+              merNo: 'merNo',
+              gatewayNo: 'gatewayNo',
+              tradeNo: 'tradeNo',
+              orderNo: 'orderNo',
+              orderStatus: TRANSACTION_STATUS.SUCCESS.toString(),
+              orderInfo: 'orderInfo',
+            },
+          }
+        }))
+        const closeAxios = mockAxios({post: postRequest})
+
+        const {close} = mockSignHelper(() => 'vietlungtung')
+
+        const asiaBill = new AsiaBillGateway()
+        const rs = await asiaBill.capture({
+          reference: 'demo ref',
+          accountId: 'accountlungtung',
+          gatewayReference: 'gatewayReference',
+          transactionType: TRANSACTION_TYPE_CAPTURE
+        }, {...credential, sandbox: true})
+        expect(rs.result).toBe(RESULT_COMPLETED)
+        expect(rs.transactionType).toBe(TRANSACTION_TYPE_CAPTURE)
+        expect(rs.gatewayReference).toBe('tradeNo')
+        closeAxios()
+        close()
+      })
+
+      it('should return fail when gateway response fail', async () => {
+        const postRequest = jest.fn(() => ({
+          data: {
+            respon: {
+              merNo: 'merNo',
+              gatewayNo: 'gatewayNo',
+              tradeNo: 'tradeNo',
+              orderNo: 'orderNo',
+              orderStatus: TRANSACTION_STATUS.FAILURE.toString(),
+              orderInfo: 'orderInfo',
+            },
+          }
+        }))
+        const closeAxios = mockAxios({post: postRequest})
+
+        const {close} = mockSignHelper(() => 'vietlungtung')
+
+        const asiaBill = new AsiaBillGateway()
+        const rs = await asiaBill.capture({
+          reference: 'demo ref',
+          accountId: 'accountlungtung',
+          gatewayReference: 'gatewayReference',
+          transactionType: TRANSACTION_TYPE_CAPTURE
+        }, {...credential, sandbox: true})
+        expect(rs.result).toBe(RESULT_FAILED)
+        expect(rs.transactionType).toBe(TRANSACTION_TYPE_CAPTURE)
+        expect(rs.gatewayReference).toBe('tradeNo')
+        closeAxios()
+        close()
+      })
+
+    })
+    describe('void transaction', () => {
+
+      it('should sign request before sending void to gateway', async () => {
+        const postRequest = jest.fn(() => ({
+          data: {
+            respon: {
+              merNo: 'merNo',
+              gatewayNo: 'gatewayNo',
+              tradeNo: 'tradeNo',
+              orderNo: 'orderNo',
+              orderStatus: TRANSACTION_STATUS.SUCCESS.toString(),
+              orderInfo: 'orderInfo',
+            },
+          }
+        }))
+        const closeAxios = mockAxios({post: postRequest})
+
+        const {mockFun, close} = mockSignHelper(() => 'vietlungtung')
+
+        const asiaBill = new AsiaBillGateway()
+        await asiaBill.void({
+          reference: 'demo ref',
+          accountId: 'accountlungtung',
+          gatewayReference: 'gatewayReference',
+          transactionType: TRANSACTION_TYPE_VOID
+        }, credential)
+        expect(mockFun).toHaveBeenCalledWith([
+          credential.merNo,
+          credential.gatewayNo,
+          'gatewayReference',
+          TRANSACTION_TYPES.VOID,
+          credential.signKey,
+        ])
+        expect(postRequest).toHaveBeenCalledWith(process.env.ASIABILL_CAPTURE_VOID_URL_LIVE_MODE, {
+          "merNo": "12345",
+          "gatewayNo": "123",
+          "tradeNo": "gatewayReference",
+          "authType": TRANSACTION_TYPES.VOID,
+          "remark": "accountlungtung",
+          "signInfo": "vietlungtung"
+        })
+        closeAxios()
+        close()
+      })
+
+      it('should return success when gateway response success', async () => {
+        const postRequest = jest.fn(() => ({
+          data: {
+            respon: {
+              merNo: 'merNo',
+              gatewayNo: 'gatewayNo',
+              tradeNo: 'tradeNo',
+              orderNo: 'orderNo',
+              orderStatus: TRANSACTION_STATUS.SUCCESS.toString(),
+              orderInfo: 'orderInfo',
+            },
+          }
+        }))
+        const closeAxios = mockAxios({post: postRequest})
+
+        const {close} = mockSignHelper(() => 'vietlungtung')
+
+        const asiaBill = new AsiaBillGateway()
+        const rs = await asiaBill.void({
+          reference: 'demo ref',
+          accountId: 'accountlungtung',
+          gatewayReference: 'gatewayReference',
+          transactionType: TRANSACTION_TYPE_VOID
+        }, {...credential, sandbox: true})
+        expect(rs.result).toBe(RESULT_COMPLETED)
+        expect(rs.transactionType).toBe(TRANSACTION_TYPE_VOID)
+        expect(rs.gatewayReference).toBe('tradeNo')
+        closeAxios()
+        close()
+      })
+
+      it('should return fail when gateway response fail', async () => {
+        const postRequest = jest.fn(() => ({
+          data: {
+            respon: {
+              merNo: 'merNo',
+              gatewayNo: 'gatewayNo',
+              tradeNo: 'tradeNo',
+              orderNo: 'orderNo',
+              orderStatus: TRANSACTION_STATUS.FAILURE.toString(),
+              orderInfo: 'orderInfo',
+            },
+          }
+        }))
+        const closeAxios = mockAxios({post: postRequest})
+
+        const {close} = mockSignHelper(() => 'vietlungtung')
+
+        const asiaBill = new AsiaBillGateway()
+        const rs = await asiaBill.void({
+          reference: 'demo ref',
+          accountId: 'accountlungtung',
+          gatewayReference: 'gatewayReference',
+          transactionType: TRANSACTION_TYPE_VOID
+        }, {...credential, sandbox: true})
+        expect(rs.result).toBe(RESULT_FAILED)
+        expect(rs.transactionType).toBe(TRANSACTION_TYPE_VOID)
+        expect(rs.gatewayReference).toBe('tradeNo')
+        closeAxios()
+        close()
+      })
+
+    })
+
+    describe('validate credential', () => {
+      const mapStatus = {
+        [TRANSACTION_STATUS.MERCHANT_GATEWAY_ACCESS_ERROR]: RESULT_RESTRICTED,
+        [TRANSACTION_STATUS.TO_BE_CONFIRMED]: RESULT_VALID,
+        [TRANSACTION_STATUS.PENDING]: RESULT_VALID,
+        [TRANSACTION_STATUS.FAILURE]: RESULT_VALID,
+        [TRANSACTION_STATUS.SUCCESS]: RESULT_VALID,
+        [TRANSACTION_STATUS.ORDER_DOES_NOT_EXIST]: RESULT_VALID,
+      }
+
+      for (let transactionStatus in mapStatus) {
+        it(`error code ${transactionStatus} should return status ${mapStatus[transactionStatus]}`, async () => {
+          const postRequest = jest.fn(() => ({data: {response: {tradeinfo: {queryResult: transactionStatus}}}}))
+          const closeAxios = mockAxios({post: postRequest})
+
+          const {mockFun, close} = mockSignHelper(() => 'vietlungtung')
+
+          const asiaBill = new AsiaBillGateway()
+          const rs = await asiaBill.validateCredential(credential)
+          expect(rs.status).toBe(mapStatus[transactionStatus])
+          expect(mockFun).toHaveBeenCalled()
+          closeAxios()
+          close()
+        })
+      }
+    })
+
+    describe('get transaction', () => {
+      it('should sign request before sending capture to gateway', async () => {
+        const postRequest = jest.fn(() => ({
+          data: {
+            response: {
+              tradeinfo: {
+                merNo: 'merNo',
+                gatewayNo: 'gatewayNo',
+                orderNo: 'orderNo',
+                tradeNo: 'tradeNo',
+                tradeDate: 'tradeDate',
+                tradeAmount: 100,
+                tradeCurrency: 'tradeCurrency',
+                sourceWebsite: 'sourceWebsite',
+                authStatus: 'authStatus',
+                queryResult: TRANSACTION_STATUS.SUCCESS,
+              },
+            },
+          }
+        }))
+        const closeAxios = mockAxios({post: postRequest})
+        const redis = mockRedis(() => "someOrderNo")
+
+        const {mockFun, close} = mockSignHelper(() => 'vietlungtung')
+
+        const asiaBill = new AsiaBillGateway()
+        await asiaBill.getTransaction({
+          reference: 'demo ref',
+          accountId: 'accountlungtung',
+          gatewayReference: 'gatewayReference',
+          transactionType: TRANSACTION_TYPE_CAPTURE
+        }, credential)
+        expect(mockFun).toHaveBeenCalledWith([
+          credential.merNo,
+          credential.gatewayNo,
+          credential.signKey,
+        ])
+        expect(postRequest).toHaveBeenCalledWith(process.env.ASIABILL_RETRIEVE_URL_LIVE_MODE, {
+          "merNo": "12345",
+          "gatewayNo": "123",
+          "signInfo": "vietlungtung",
+          "orderNo": "someOrderNo"
+        })
+        expect(redis.mockFun).toHaveBeenCalledWith(`${process.env.ASIABILL_CACHE_KEY_TRANO}/gatewayReference`)
+        closeAxios()
+        close()
+        redis.close()
+      })
+
+      it('should return success when gateway response success', async () => {
+        const postRequest = jest.fn(() => ({
+          data: {
+            response: {
+              tradeinfo: {
+                merNo: 'merNo',
+                gatewayNo: 'gatewayNo',
+                orderNo: 'orderNo',
+                tradeNo: 'tradeNo',
+                tradeDate: "2021-02-04T20:53:59.093Z",
+                tradeAmount: '100',
+                tradeCurrency: 'tradeCurrency',
+                sourceWebsite: 'sourceWebsite',
+                authStatus: 'authStatus',
+                queryResult: TRANSACTION_STATUS.SUCCESS,
+              },
+            },
+          }
+        }))
+        const closeAxios = mockAxios({post: postRequest})
+        const redis = mockRedis(() => "someOrderNo")
+
+        const {close} = mockSignHelper(() => 'vietlungtung')
+
+        const asiaBill = new AsiaBillGateway()
+        const rs = await asiaBill.getTransaction({
+          reference: 'demo ref',
+          accountId: 'accountlungtung',
+          gatewayReference: 'gatewayReference',
+          transactionType: TRANSACTION_TYPE_CAPTURE
+        }, credential)
+
+        expect(rs).toEqual({
+          "accountId": "accountlungtung",
+          "amount": 100,
+          "currency": "tradeCurrency",
+          "gatewayReference": "tradeNo",
+          "isSuccess": true,
+          "isTest": false,
+          "reference": "orderNo",
+          "timestamp": "2021-02-04T20:53:59.093Z",
+          "transactionType": TRANSACTION_TYPE_CAPTURE
+        })
+
+        closeAxios()
+        close()
+        redis.close()
+      })
+
+      it('should return fail when gateway response fail', async () => {
+        const postRequest = jest.fn(() => ({
+          data: {
+            response: {
+              tradeinfo: {
+                merNo: 'merNo',
+                gatewayNo: 'gatewayNo',
+                orderNo: 'orderNo',
+                tradeNo: 'tradeNo',
+                tradeDate: "2021-02-04T20:53:59.093Z",
+                tradeAmount: '100',
+                tradeCurrency: 'tradeCurrency',
+                sourceWebsite: 'sourceWebsite',
+                authStatus: 'authStatus',
+                queryResult: 'ASDAS',
+              },
+            },
+          }
+        }))
+        const closeAxios = mockAxios({post: postRequest})
+        const redis = mockRedis(() => "someOrderNo")
+
+        const {close} = mockSignHelper(() => 'vietlungtung')
+
+        const asiaBill = new AsiaBillGateway()
+        const rs = await asiaBill.getTransaction({
+          reference: 'demo ref',
+          accountId: 'accountlungtung',
+          gatewayReference: 'gatewayReference',
+          transactionType: TRANSACTION_TYPE_CAPTURE
+        }, {...credential, sandbox: false})
+
+        expect(rs).toEqual({
+          "accountId": "accountlungtung",
+          "amount": 100,
+          "currency": "tradeCurrency",
+          "gatewayReference": "tradeNo",
+          "isSuccess": false,
+          "isTest": false,
+          "reference": "orderNo",
+          "timestamp": "2021-02-04T20:53:59.093Z",
+          "transactionType": TRANSACTION_TYPE_CAPTURE
+        })
+
+        closeAxios()
+        close()
+        redis.close()
+      })
     })
   },
 );

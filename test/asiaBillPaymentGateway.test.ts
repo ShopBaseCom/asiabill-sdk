@@ -1,8 +1,8 @@
 import type { Credential, CustomerAddress, OrderRequest }   from '../src/payment/type';
-import AsiaBillGateway                                      from '../src/payment/asabill/Gateway';
+import AsiaBillGateway                                      from '../src/payment/asiabill/Gateway';
 import * as Joi                                             from 'joi';
-import * as signHelper                                      from '../src/payment/asabill/signHelper';
-import { MAP_ERROR, TRANSACTION_STATUS, TRANSACTION_TYPES } from '../src/payment/asabill/constant';
+import * as signHelper                                      from '../src/payment/asiabill/signHelper';
+import { MAP_ERROR, TRANSACTION_STATUS, TRANSACTION_TYPES } from '../src/payment/asiabill/constant';
 import { TRANSACTION_TYPE_CAPTURE, TRANSACTION_TYPE_VOID }  from '../src/http/constant/transactionType';
 import Axios                                                from '../src/lib/Axios';
 import axios                                                from 'axios'

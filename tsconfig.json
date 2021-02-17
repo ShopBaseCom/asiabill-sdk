@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "rootDir": "./",
+        "outDir": "./build",
+        "esModuleInterop": true,
+        "strict": true,
+        "lib": [
+            "es2017"
+        ]
+    },
+    "exclude": [
+        "node_modules"
+    ],
+    "skipLibCheck": true
+}
